@@ -1,0 +1,37 @@
+{
+  "name": "keystore",
+  "version": "0.0.1",
+  "description": "Keystore manager",
+  "main": "index.js",
+  "engines": {
+    "node": "^8.2.1",
+    "npm": "^5.3.0"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jibrelnetwork/keystore.git"
+  },
+  "author": "Jibrel Network",
+  "license": "MIT",
+  "keywords": [
+    "keystore",
+    "mnemonic",
+    "key",
+    "account",
+    "ethereum",
+    "address",
+    "contracts",
+    "crypto",
+    "security",
+    "derivation"
+  ],
+  "bugs": {
+    "url": "https://github.com/jibrelnetwork/keystore/issues"
+  },
+  "homepage": "https://github.com/jibrelnetwork/keystore#readme",
+  "dependencies": {},
+  "devDependencies": {},
+}
