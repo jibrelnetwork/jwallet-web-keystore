@@ -1,3 +1,3 @@
-const AccountsManager = require('./src/AccountsManager')
+const Keystore = require('./lib')
 
-module.exports = AccountsManager
+module.exports = Keystore

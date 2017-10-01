@@ -13,7 +13,7 @@ const { Random, Hash } = bitcore.crypto
 const ec = new EC('secp256k1')
 const { encryptData, decryptData } = encryption
 
-class AccountsManager {
+class Keystore {
   constructor() {
     this.accounts = []
     this.defaultDerivationPath = "m/44'/0'/0'/0"
@@ -449,4 +449,4 @@ class AccountsManager {
   }
 }
 
-module.exports = AccountsManager
+module.exports = Keystore
