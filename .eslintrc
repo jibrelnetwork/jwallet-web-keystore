@@ -71,7 +71,7 @@
     "newline-per-chained-call": "off",
     "no-console": "warn",
     "prefer-template": "error",
-    "class-methods-use-this": "warn",
+    "class-methods-use-this": "off",
     "require-yield": "warn",
     "no-underscore-dangle": "off",
     "no-use-before-define": "off"

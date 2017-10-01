@@ -1,17 +1,12 @@
-const CryptoJS = require('crypto-js')
-const EC = require('elliptic').ec
+const uuidv4 = require('uuid/v4')
 const bitcore = require('bitcore-lib')
 const Mnemonic = require('bitcore-mnemonic')
-const scrypt = require('scrypt')
-const uuidv4 = require('uuid/v4')
 const { cloneDeep, find, findIndex } = require('lodash')
 
+const utils = require('./utils')
 const encryption = require('./encryption')
-const leftPadString = require('./leftPadString')
 
-const { Random, Hash } = bitcore.crypto
-const ec = new EC('secp256k1')
-const { encryptData, decryptData } = encryption
+const { generateMnemonic, isMnemonicValid } = require('./mnemonic')
 
 class Keystore {
   constructor() {
@@ -21,45 +16,22 @@ class Keystore {
     this.randomBufferLength = 32
     this.saltByteCount = 32
     this.mnemonicType = 'mnemonic'
-    this.privateKeyType = 'privateKey'
-    this.scryptOptions = { N: 2 ** 18, r: 8, p: 1 }
+    this.addressType = 'address'
+    this.scryptParams = { N: 2 ** 18, r: 8, p: 1 }
     this.derivedKeyLength = 32
     this.version = 1
   }
 
-  static isMnemonicValid(mnemonic) {
-    const words = mnemonic.split(' ')
-    const mnemonic1 = words.slice(0, 12).join(' ')
-    const mnemonic2 = words.slice(12, 24).join(' ')
-
-    const isMnemonic1Valid = Mnemonic.isValid(mnemonic1, Mnemonic.Words.ENGLISH)
-    const isMnemonic2Valid = Mnemonic.isValid(mnemonic2, Mnemonic.Words.ENGLISH)
-
-    return (isMnemonic1Valid && isMnemonic2Valid)
-  }
-
-  static isPrivateKeyCorrect(key, length) {
-    const is0x = (key.indexOf('0x') === 0)
-    const keyLength = is0x ? (key.length - 2) : key.length
-
-    if (keyLength !== length) {
-      throw (new Error(`[isKeyCorrect] Key ${key} is incorrect`))
-    }
-
-    const keyRe = /^(0x)([A-F\d]+)$/i
-
-    return keyRe.test(key)
+  isMnemonicValid(mnemonic) {
+    return isMnemonicValid(mnemonic)
   }
 
   generateMnemonic(entropy) {
-    const dataList = Mnemonic.Words.ENGLISH
-    const hashedEntropy = this._getHashedEntropy(entropy)
+    return generateMnemonic(entropy, this.randomBufferLength)
+  }
 
-    // One mnemonic is set of 12 words. So we need two ones.
-    const mnemonic1 = hashedEntropy ? new Mnemonic(hashedEntropy, dataList) : new Mnemonic(dataList)
-    const mnemonic2 = hashedEntropy ? new Mnemonic(hashedEntropy, dataList) : new Mnemonic(dataList)
-
-    return `${mnemonic1.toString()} ${mnemonic2.toString()}`
+  isPrivateKeyCorrect(privateKey) {
+    return utils.isPrivateKeyCorrect(privateKey)
   }
 
   getAccounts() {
@@ -67,7 +39,7 @@ class Keystore {
   }
 
   getAccount(findProps) {
-    if (!findProps.id) {
+    if (!(findProps && findProps.id)) {
       throw (new Error('[getAccount] Account ID not provided'))
     }
 
@@ -83,17 +55,17 @@ class Keystore {
 
     if (type === this.mnemonicType) {
       createAccountHandler = isReadOnly
-        ? this._createReadOnlyMnemonicAccount.bind(this)
-        : this._createMnemonicAccount.bind(this)
-    } else if (type === this.privateKeyType) {
+        ? this._createReadOnlyMnemonicAccount
+        : this._createMnemonicAccount
+    } else if (type === this.addressType) {
       createAccountHandler = isReadOnly
-        ? this._createReadOnlyPrivateKeyAccount.bind(this)
-        : this._createPrivateKeyAccount.bind(this)
+        ? this._createReadOnlyAddressAccount
+        : this._createAddressAccount
     } else {
-      throw (new Error('[createAccount] Type of account not provided'))
+      throw (new Error('[createAccount] Type of account not provided or incorrect'))
     }
 
-    createAccountHandler(accountData)
+    createAccountHandler.call(this, accountData)
 
     return accountData.id
   }
@@ -112,7 +84,7 @@ class Keystore {
   }
 
   getPrivateKey(password, accountId) {
-    const account = this.getAccount({ id: accountId, type: this.privateKeyType })
+    const account = this.getAccount({ id: accountId, type: this.addressType })
 
     if (!account) {
       throw (new Error('[getPrivateKey] Account not found'))
@@ -127,17 +99,17 @@ class Keystore {
     }
 
     const derivedKey = this._deriveKeyFromPassword(password, salt)
-    const descryptedData = this._decryptData(dataToDecrypt, derivedKey, true)
+    const decryptedData = this._decryptData(dataToDecrypt, derivedKey, true)
 
-    if (!descryptedData.length) {
+    if (!decryptedData.length) {
       throw (new Error('[getPrivateKey] Password is incorrect'))
     }
 
-    return descryptedData
+    return decryptedData
   }
 
   getPrivateKeyFromMnemonic(password, accountId, keyIndex) {
-    const account = this.getAccount(accountId, this.mnemonicType)
+    const account = this.getAccount({ id: accountId, type: this.mnemonicType })
 
     if (!account) {
       throw (new Error('[getPrivateKeyFromMnemonic] Account not found'))
@@ -145,9 +117,9 @@ class Keystore {
 
     const derivedKey = this._deriveKeyFromPassword(password, account.salt)
     const privateKey = this._generatePrivateKey(derivedKey, account, keyIndex)
-    const address = this._computeAddressFromPrivateKey(privateKey)
     const encryptedPrivateKey = this._encryptData(privateKey, derivedKey)
 
+    const address = utils.getAddressFromPrivateKey(privateKey)
     const addresses = [...account.addresses, address]
 
     const privateKeys = cloneDeep(account.encrypted.privateKeys)
@@ -155,7 +127,7 @@ class Keystore {
 
     const encrypted = cloneDeep(account.encrypted)
 
-    this.setAccount(account, {
+    this._setAccount(account, {
       addresses,
       encrypted: { ...encrypted, privateKeys },
     })
@@ -165,7 +137,7 @@ class Keystore {
 
   checkPassword(password, account) {
     const { type, salt, addresses, encrypted } = account
-    const isPrivateKey = (type === this.privateKeyType)
+    const isPrivateKey = (type === this.addressType)
 
     const dataToDecrypt = isPrivateKey ? encrypted.privateKeys[addresses[0]] : encrypted.mnemonic
 
@@ -199,61 +171,8 @@ class Keystore {
     return data
   }
 
-  static _concatEntropyBuffers(entropyBuffer, randomBuffer) {
-    const totalEntropy = Buffer.concat([entropyBuffer, randomBuffer])
-
-    if (totalEntropy.length !== entropyBuffer.length + randomBuffer.length) {
-      throw (new Error('[_concatAndSha256] Concatenation of entropy buffers failed.'))
-    }
-
-    return Hash.sha256(totalEntropy)
-  }
-
-  static _computeAddressFromPrivateKey(privateKey) {
-    const keyEncodingType = 'hex'
-
-    const keyPair = ec.genKeyPair()
-    keyPair._importPrivate(privateKey, keyEncodingType)
-
-    const compact = false
-
-    const publicKey = keyPair.getPublic(compact, keyEncodingType).slice(2)
-    const publicKeyWordArray = CryptoJS.enc.Hex.parse(publicKey)
-    const hash = CryptoJS.SHA3(publicKeyWordArray, { outputLength: 256 })
-    const address = hash.toString(CryptoJS.enc.Hex).slice(24)
-
-    return `0x${address}`
-  }
-
-  static _decryptData(dataToDecrypt, derivedKey, isPrivateKey = false) {
-    return decryptData({
-      derivedKey,
-      isPrivateKey,
-      data: dataToDecrypt,
-    })
-  }
-
-  _getHashedEntropy(entropy) {
-    if (!entropy) {
-      return null
-    } else if (typeof entropy !== 'string') {
-      throw (new Error('[_getHashedEntropy] Entropy is set but not a string.'))
-    }
-
-    const entropyBuffer = Buffer.from(entropy)
-    const randomBuffer = Random.getRandomBuffer(this.randomBufferLength)
-
-    return this._concatEntropyBuffers(entropyBuffer, randomBuffer).slice(0, 16)
-  }
-
-  _generateSalt(byteCount = this.saltByteCount) {
-    return Random.getRandomBuffer(byteCount).toString('base64')
-  }
-
   _deriveKeyFromPassword(password, salt) {
-    const derivedKey = scrypt.hashSync(password, this.scryptOptions, this.derivedKeyLength, salt)
-
-    return new Uint8Array(derivedKey)
+    return utils.deriveKeyFromPassword(password, this.scryptParams, this.derivedKeyLength, salt)
   }
 
   _createMnemonicAccount(props) {
@@ -264,7 +183,7 @@ class Keystore {
       throw (new Error('[_createMnemonicAccount] Invalid mnemonic'))
     }
 
-    const paddedMnemonic = leftPadString(mnemonic, ' ', 120)
+    const paddedMnemonic = utils.leftPadString(mnemonic, ' ', 120)
     const hdRoot = new Mnemonic(mnemonic).toHDPrivateKey().xprivkey
 
     const hdRootKey = new bitcore.HDPrivateKey(hdRoot)
@@ -306,15 +225,19 @@ class Keystore {
     })
   }
 
-  _createPrivateKeyAccount(props) {
+  _createAddressAccount(props) {
     const { id, salt, derivedKey, privateKey, accountName } = props
 
-    const address = this._computeAddressFromPrivateKey(privateKey)
+    if (!this.isPrivateKeyCorrect(privateKey)) {
+      throw (new Error('[_createAddressAccount] Private Key is incorrect'))
+    }
+
+    const address = utils.getAddressFromPrivateKey(privateKey)
     const privateKeys = {}
     privateKeys[address] = this._encryptData(privateKey, derivedKey, true)
 
     this.accounts.push({
-      type: this.privateKeyType,
+      type: this.addressType,
       id,
       salt,
       accountName,
@@ -324,11 +247,11 @@ class Keystore {
     })
   }
 
-  _createReadOnlyPrivateKeyAccount(props) {
+  _createReadOnlyAddressAccount(props) {
     const { id, address, accountName } = props
 
     this.accounts.push({
-      type: this.privateKeyType,
+      type: this.addressType,
       id,
       accountName,
       isReadOnly: true,
@@ -340,7 +263,7 @@ class Keystore {
   }
 
   _getExtendedAccountInfo(password, accountName) {
-    const salt = this._generateSalt()
+    const salt = utils.generateSalt(this.saltByteCount)
     const id = uuidv4()
 
     return {
@@ -352,11 +275,19 @@ class Keystore {
   }
 
   _encryptData(dataToEncrypt, derivedKey, isPrivateKey = false) {
-    return encryptData({
+    return encryption.encryptData({
       derivedKey,
       isPrivateKey,
       data: dataToEncrypt,
       encryptionType: this.defaultEncryptionType,
+    })
+  }
+
+  _decryptData(dataToDecrypt, derivedKey, isPrivateKey = false) {
+    return encryption.decryptData({
+      derivedKey,
+      isPrivateKey,
+      data: dataToDecrypt,
     })
   }
 
@@ -374,9 +305,10 @@ class Keystore {
 
     const hdRoot = isReadOnly
       ? new bitcore.HDPublicKey(bip32XPublicKey)
-      : new bitcore.HDPrivateKey(this._decryptString(encrypted.hdRoot, derivedKey))
+      : new bitcore.HDPrivateKey(this._decryptData(encrypted.hdRoot, derivedKey))
 
     const hdPrivateKey = hdRoot.derive(keyIndexToDerive)
+
     const privateKeyBuffer = hdPrivateKey.privateKey.toBuffer()
     const privateKeyBufferLength = privateKeyBuffer.length
 
@@ -385,7 +317,7 @@ class Keystore {
     if ((privateKeyBufferLength < 16) || (privateKeyBufferLength > 32)) {
       throw (new Error('[_generatePrivateKey] Private key buffer has inappropriate size'))
     } else if (privateKeyBufferLength < 32) {
-      privateKey = leftPadString(privateKey, '0', 64)
+      privateKey = utils.leftPadString(privateKey, '0', 64)
     }
 
     return privateKey

@@ -1,6 +1,7 @@
 const nacl = require('tweetnacl')
+const util = require('tweetnacl-util')
 
-const { randomBytes, secretbox, util } = nacl
+const { randomBytes, secretbox } = nacl
 
 function encryptData(props) {
   const { encryptionType, ...otherProps } = props
@@ -42,7 +43,7 @@ function getNonce() {
 }
 
 function decodePrivateKey(privateKey) {
-  const privateKeyBase64 = (Buffer.from(privateKey, 'hex')).toString('base64')
+  const privateKeyBase64 = (Buffer.from(privateKey)).toString('base64')
 
   return util.decodeBase64(privateKeyBase64)
 }
@@ -50,7 +51,7 @@ function decodePrivateKey(privateKey) {
 function encodePrivateKey(privateKey) {
   const privateKeyBase64 = util.encodeBase64(privateKey)
 
-  return (Buffer.from(privateKeyBase64, 'base64')).toString('hex')
+  return (Buffer.from(privateKeyBase64, 'base64')).toString()
 }
 
 function decryptData(props) {
