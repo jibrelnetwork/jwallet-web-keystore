@@ -4,19 +4,26 @@ const EC = require('elliptic').ec
 const { Random } = require('bitcore-lib').crypto
 
 const ec = new EC('secp256k1')
-const privateKeyLength = 64
 
-function isPrivateKeyCorrect(key) {
-  const is0x = (key.indexOf('0x') === 0)
-  const keyLength = is0x ? (key.length - 2) : key.length
+function isHashStringValid(hash, length) {
+  const is0x = (hash.indexOf('0x') === 0)
+  const hashLength = is0x ? (hash.length - 2) : hash.length
 
-  if (keyLength !== privateKeyLength) {
-    throw (new Error(`[isKeyCorrect] Key ${key} is incorrect`))
+  if (hashLength !== length) {
+    return false
   }
 
-  const keyRe = /^(0x)([A-F\d]+)$/i
+  const hashRe = new RegExp(`^(0x)?([A-F\\d]{${length}})$`, 'i')
 
-  return keyRe.test(key)
+  return hashRe.test(hash)
+}
+
+function getAddressFromPublicKey(publicKey) {
+  const publicKeyWordArray = cryptoJS.enc.Hex.parse(publicKey)
+  const hash = cryptoJS.SHA3(publicKeyWordArray, { outputLength: 256 })
+  const address = hash.toString(cryptoJS.enc.Hex).slice(24)
+
+  return add0x(address)
 }
 
 function getAddressFromPrivateKey(privateKey) {
@@ -28,11 +35,8 @@ function getAddressFromPrivateKey(privateKey) {
   const compact = false
 
   const publicKey = keyPair.getPublic(compact, keyEncodingType).slice(2)
-  const publicKeyWordArray = cryptoJS.enc.Hex.parse(publicKey)
-  const hash = cryptoJS.SHA3(publicKeyWordArray, { outputLength: 256 })
-  const address = hash.toString(cryptoJS.enc.Hex).slice(24)
 
-  return `0x${address}`
+  return getAddressFromPublicKey(publicKey)
 }
 
 function deriveKeyFromPassword(password, scryptParams, derivedKeyLength, salt) {
@@ -56,10 +60,20 @@ function generateSalt(byteCount) {
   return Random.getRandomBuffer(byteCount).toString('base64')
 }
 
+function add0x(data) {
+  if (data.indexOf('0x') === 0) {
+    return data
+  }
+
+  return `0x${data}`
+}
+
 module.exports = {
-  isPrivateKeyCorrect,
+  isHashStringValid,
+  getAddressFromPublicKey,
   getAddressFromPrivateKey,
   deriveKeyFromPassword,
   leftPadString,
   generateSalt,
+  add0x,
 }

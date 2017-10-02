@@ -10,7 +10,7 @@ function encryptData(props) {
     return encryptNaclSecretbox(otherProps)
   }
 
-  throw (new Error(`[encryptData] Encryption type ${encryptionType} is not supported`))
+  throw (new Error(`Encryption type ${encryptionType} is not supported`))
 }
 
 function encryptNaclSecretbox(props) {
@@ -61,7 +61,7 @@ function decryptData(props) {
     return decryptNaclSecretbox(props)
   }
 
-  throw (new Error(`[encryptData] Encryption type ${encryptionType} is not supported`))
+  throw (new Error(`Decryption type ${encryptionType} is not supported`))
 }
 
 function decryptNaclSecretbox(props) {
@@ -70,8 +70,8 @@ function decryptNaclSecretbox(props) {
   const { nonce, encryptedData } = decodeEncryptedData(data)
   const decryptedData = secretbox.open(encryptedData, nonce, derivedKey)
 
-  if (decryptedData === undefined) {
-    throw new Error('[decryptNaclSecretbox] Decryption failed')
+  if (decryptedData == null) {
+    throw new Error('Decryption failed')
   }
 
   return isPrivateKey ? encodePrivateKey(decryptedData) : util.encodeUTF8(decryptedData)
