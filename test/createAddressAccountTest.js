@@ -118,4 +118,15 @@ describe('address account', function() {
 
     done()
   })
+
+  it('removeAccounts() should remove all accounts', function(done) {
+    keystore.removeAccounts()
+
+    const accounts = keystore.getAccounts()
+
+    accounts.should.be.an.Array()
+    accounts.length.should.be.equal(0)
+
+    done()
+  })
 })

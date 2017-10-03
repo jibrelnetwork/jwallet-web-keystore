@@ -57,6 +57,22 @@ class Keystore {
     return find(this.accounts, findProps)
   }
 
+  removeAccount(accountId) {
+    const accountIndex = this._getAccountIndex(accountId)
+
+    if (accountIndex === -1) {
+      return false
+    }
+
+    this.accounts.splice(accountIndex, 1)
+
+    return true
+  }
+
+  removeAccounts() {
+    this.accounts = []
+  }
+
   createAccount(props) {
     const { type, isReadOnly, password, accountName, ...otherProps } = props
     const extendedAccountInfo = this._getExtendedAccountInfo(accountName)

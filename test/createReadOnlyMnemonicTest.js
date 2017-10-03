@@ -96,4 +96,30 @@ describe('mnemonic read only account', function() {
       done()
     }
   })
+
+  it('removeAccount() should return false (incorrect accountId)', function(done) {
+    const result = keystore.removeAccount('')
+    const accounts = keystore.getAccounts()
+
+    result.should.be.a.Boolean()
+    result.should.be.equal(false)
+
+    accounts.should.be.an.Array()
+    accounts.length.should.be.equal(1)
+
+    done()
+  })
+
+  it('removeAccount() should return true', function(done) {
+    const result = keystore.removeAccount(accountId)
+    const accounts = keystore.getAccounts()
+
+    result.should.be.a.Boolean()
+    result.should.be.equal(true)
+
+    accounts.should.be.an.Array()
+    accounts.length.should.be.equal(0)
+
+    done()
+  })
 })
