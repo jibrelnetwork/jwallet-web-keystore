@@ -8,7 +8,8 @@
     "test": "./node_modules/.bin/mocha --compilers babel-register",
     "clean": "rm -rf ./lib",
     "compile": "npm run clean && ./node_modules/.bin/babel ./src --out-dir ./lib",
-    "build": "npm run lint && npm run compile && npm test"
+    "build": "npm run lint && npm run compile && npm test",
+    "postinstall": "npm run compile"
   },
   "repository": {
     "type": "git",
