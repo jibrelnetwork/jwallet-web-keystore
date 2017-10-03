@@ -8,7 +8,7 @@ Keystore can hold `read only` / `full access` accounts of two types:
 * Address / PrivateKey
 * Mnemonic
 
-Also Keystore API provides some utility methods for working with mnemonics / hashes / passwords.
+Also Keystore API provides several [utility methods](#static-methods) for working with mnemonics / hashes / passwords.
 
 ## Get Started
 
@@ -104,6 +104,8 @@ const accounts = keystore.getAccounts()
 ##### Parameters
 
 account properties object ([Account properties](#account-properties)).
+
+Note: all properties are optional except of `id`.
 
 ##### Returns
 
@@ -334,7 +336,7 @@ Mnemonic - 12 English words splited by space.
 ##### Example
 
 ```javascript
-const isValid = Keystore.generateMnemonic()
+const mnemonic = Keystore.generateMnemonic()
 ```
 
 #### isHashStringValid(hash, hashLength)
