@@ -111,6 +111,55 @@ class Keystore {
     return this._setAccount(account, { accountName: newName })
   }
 
+  getPrivateKey(password, accountId) {
+    const account = this.getAccount({ id: accountId })
+
+    this._checkAccountExist(account)
+    this._checkReadOnly(account)
+    this._checkPassword(password)
+
+    const { encrypted } = account
+    const dataToDecrypt = encrypted.privateKey
+
+    if (!dataToDecrypt) {
+      throw (new Error('Address is not setted yet'))
+    }
+
+    const decryptedData = this._decryptData(dataToDecrypt, password, true)
+
+    return utils.add0x(decryptedData)
+  }
+
+  setAddress(password, accountId, addressIndex = 0) {
+    const account = this.getAccount({ id: accountId, type: this.mnemonicType })
+
+    this._checkAccountExist(account)
+
+    if (!account.isReadOnly) {
+      this._checkPassword(password)
+    }
+
+    const { encrypted, isReadOnly } = account
+    const hdRoot = this._getHdRoot(password, account)
+    const generatedKey = this._generateKey(hdRoot, addressIndex)
+
+    if (isReadOnly) {
+      return this._setAccount(account, {
+        address: utils.getAddressFromPublicKey(generatedKey.publicKey.toString()),
+      })
+    }
+
+    const privateKey = generatedKey.privateKey.toString()
+
+    return this._setAccount(account, {
+      address: utils.getAddressFromPrivateKey(privateKey),
+      encrypted: {
+        ...encrypted,
+        privateKey: this._encryptData(privateKey, password, true),
+      },
+    })
+  }
+
   setDerivationPath(password, accountId, newDerivationPath) {
     const account = this.getAccount({ id: accountId, type: this.mnemonicType })
 
@@ -135,57 +184,14 @@ class Keystore {
     })
   }
 
-  getPrivateKey(password, accountId) {
-    const account = this.getAccount({ id: accountId })
-
-    this._checkAccountExist(account)
-    this._checkReadOnly(account)
-    this._checkPassword(password)
-
-    const { encrypted } = account
-    const dataToDecrypt = encrypted.privateKey
-
-    if (!dataToDecrypt) {
-      throw (new Error('Address is not setted yet'))
-    }
-
-    const decryptedData = this._decryptData(dataToDecrypt, password, true)
-
-    return utils.add0x(decryptedData)
-  }
-
-  setAddress(password, accountId, addressIndex = 0) {
-    const account = this.getAccount({ id: accountId, type: this.mnemonicType })
-
-    this._checkAccountExist(account)
-    this._checkPassword(password)
-
-    const { encrypted, isReadOnly } = account
-    const hdRoot = this._getHdRoot(password, account)
-    const generatedKey = this._generateKey(hdRoot, addressIndex)
-
-    if (isReadOnly) {
-      return this._setAccount(account, {
-        address: utils.getAddressFromPublicKey(generatedKey.publicKey.toString()),
-      })
-    }
-
-    const privateKey = generatedKey.privateKey.toString()
-
-    return this._setAccount(account, {
-      address: utils.getAddressFromPrivateKey(privateKey),
-      encrypted: {
-        ...encrypted,
-        privateKey: this._encryptData(privateKey, password, true),
-      },
-    })
-  }
-
   getAddressesFromMnemonic(password, accountId, iteration) {
     const account = this.getAccount({ id: accountId, type: this.mnemonicType })
 
     this._checkAccountExist(account)
-    this._checkPassword(password)
+
+    if (!account.isReadOnly) {
+      this._checkPassword(password)
+    }
 
     return this._generateAddresses(password, account, iteration)
   }
@@ -218,6 +224,12 @@ class Keystore {
     this._restoreBackupData(data)
 
     return data
+  }
+
+  setPassword(password, newPassword) {
+    this._checkPassword(password)
+    this._setPasswordDataToCheck(newPassword)
+    this._reEncryptData(password, newPassword)
   }
 
   _createMnemonicAccount(props) {
@@ -451,16 +463,7 @@ class Keystore {
 
   _checkPassword(password) {
     if (!this.checkPasswordData) {
-      const testPasswordResult = testPassword(password, this.passwordConfig)
-
-      if (testPasswordResult.failedTests) {
-        throw (new Error('Password is too weak'))
-      }
-
-      // for readOnly accounts we need to have some encrypted data to check password
-      const checkPasswordData = utils.generateSalt(this.saltByteCount)
-
-      this.checkPasswordData = this._encryptData(checkPasswordData, password)
+      this._setPasswordDataToCheck(password)
 
       return
     }
@@ -476,6 +479,45 @@ class Keystore {
     } catch (e) {
       throw (new Error(errMessage))
     }
+  }
+
+  _setPasswordDataToCheck(password) {
+    const testPasswordResult = testPassword(password, this.passwordConfig)
+
+    if (testPasswordResult.failedTests) {
+      throw (new Error('Password is too weak'))
+    }
+
+    const checkPasswordData = utils.generateSalt(this.saltByteCount)
+
+    this.checkPasswordData = this._encryptData(checkPasswordData, password)
+  }
+
+  _reEncryptData(password, newPassword) {
+    this.accounts.forEach((account) => {
+      const { isReadOnly, encrypted } = account
+
+      if (isReadOnly) {
+        return
+      }
+
+      const newEncrypted = {}
+
+      Object.keys(encrypted).forEach((key) => {
+        const encryptedItem = encrypted[key]
+        const isPrivateKey = (key === 'privateKey')
+
+        if (encryptedItem) {
+          const decryptedItem = this._decryptData(encryptedItem, password, isPrivateKey)
+
+          newEncrypted[key] = this._encryptData(decryptedItem, newPassword)
+        } else {
+          newEncrypted[key] = encryptedItem
+        }
+      })
+
+      this._setAccount(account, { encrypted: newEncrypted })
+    })
   }
 }
 

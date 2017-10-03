@@ -60,7 +60,7 @@ describe('mnemonic read only account', function() {
   })
 
   it('getAddressesFromMnemonic() should derive addresses from mnemonic with default path', function(done) {
-    const addresses = keystore.getAddressesFromMnemonic(password, accountId)
+    const addresses = keystore.getAddressesFromMnemonic(null, accountId)
 
     addresses.should.be.an.Array()
     addresses.length.should.be.equal(addressesCountToDerive)
@@ -74,7 +74,7 @@ describe('mnemonic read only account', function() {
   })
 
   it('setAddress() should set current address derived from mnemonic by index', function(done) {
-    const account = keystore.setAddress(password, accountId, 3)
+    const account = keystore.setAddress(null, accountId, 3)
 
     account.should.be.an.Object()
     account.id.should.be.equal(accountId)

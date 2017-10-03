@@ -3,6 +3,7 @@ const Keystore = require('../index')
 const keystore = new Keystore()
 
 const password = 'JHJ23jG^*DGHj667s'
+const newPassword = 'Tw5E^g7djfd(29j'
 const accountName = 'address account'
 const updatedAccountName = 'updated address account'
 const privateKey = `0x${'1'.repeat(64)}`
@@ -109,8 +110,14 @@ describe('address account', function() {
     done()
   })
 
+  it('setPassword() should change keystore password', function(done) {
+    keystore.setPassword(password, newPassword)
+
+    done()
+  })
+
   it('getPrivateKey() should get current private key', function(done) {
-    const currentPrivateKey = keystore.getPrivateKey(password, accountId)
+    const currentPrivateKey = keystore.getPrivateKey(newPassword, accountId)
 
     currentPrivateKey.should.be.a.String()
     currentPrivateKey.length.should.be.equal(privateKeyLength)

@@ -46,8 +46,7 @@ const keystore = new Keystore(props)
 | encrypted.mnemonic   | Object  | Encrypted mnemonic                                                |
 | encrypted.hdPath     | Object  | Encrypted HD private key parent                                   |
 
-#### Notes:
-
+**Notes:**
   * `isReadOnly` - flag means that account can be used only for balance / transactions checking
   * `bip32XPublicKey` - `xpub...` key that used for deriving of public keys (addresses)
   * `encrypted.hdPath` - `xprv...` key that used for deriving of private keys
@@ -105,7 +104,7 @@ const accounts = keystore.getAccounts()
 
 account properties object ([Account properties](#account-properties)).
 
-Note: all properties are optional except of `id`.
+**Note: all properties are optional except of `id`.**
 
 ##### Returns
 
@@ -183,28 +182,6 @@ Updated account.
 const updatedAccount = keystore.setAccountName('110ec58a-a0f2-4ac4-8393-c977d813b8d1', 'New account name')
 ```
 
-#### setDerivationPath(password, accountId, newDerivationPath)
-
-##### Parameters
-
-| Param             | Type   | Description          |
-| ----------------- | ------ | -------------------- |
-| password          | String | Keystore password    |
-| accountId         | String | Unique ID of account |
-| newDerivationPath | String | New derivation path  |
-
-Note: default derivation path that will be assigned to all new created accounts can be managed by `defaultDerivationPath` constructor parameter.
-
-##### Returns
-
-Updated account.
-
-##### Example
-
-```javascript
-const updatedAccount = keystore.setDerivationPath('JHJ23jG^*DGHj667s', '110ec58a-a0f2-4ac4-8393-c977d813b8d1', "m/44'/61'/0'/0")
-```
-
 #### getPrivateKey(password, accountId)
 
 ##### Parameters
@@ -226,7 +203,7 @@ const privateKey = keystore.getPrivateKey('JHJ23jG^*DGHj667s', '110ec58a-a0f2-4a
 
 #### setAddress(password, accountId, addressIndex)
 
-Note: used only for `mnemonic` accounts.
+**Note: used only for `mnemonic` accounts.**
 
 ##### Parameters
 
@@ -235,6 +212,8 @@ Note: used only for `mnemonic` accounts.
 | password     | String | Keystore password                                              |
 | accountId    | String | Unique ID of account                                           |
 | addressIndex | String | Index of address to derive from `mnemonic` / `bip32XPublicKey` |
+
+**Note: password is not needed for read-only accounts**
 
 ##### Returns
 
@@ -246,9 +225,33 @@ Updated account.
 const updatedAccount = keystore.setAddress('JHJ23jG^*DGHj667s', '110ec58a-a0f2-4ac4-8393-c977d813b8d1', 5)
 ```
 
+#### setDerivationPath(password, accountId, newDerivationPath)
+
+**Note: used only for `mnemonic` accounts.**
+
+##### Parameters
+
+| Param             | Type   | Description          |
+| ----------------- | ------ | -------------------- |
+| password          | String | Keystore password    |
+| accountId         | String | Unique ID of account |
+| newDerivationPath | String | New derivation path  |
+
+**Note: default derivation path that will be assigned to all new created accounts can be managed by `defaultDerivationPath` constructor parameter.**
+
+##### Returns
+
+Updated account.
+
+##### Example
+
+```javascript
+const updatedAccount = keystore.setDerivationPath('JHJ23jG^*DGHj667s', '110ec58a-a0f2-4ac4-8393-c977d813b8d1', "m/44'/61'/0'/0")
+```
+
 #### getAddressesFromMnemonic(password, accountId, iteration)
 
-Note: used only for `mnemonic` accounts.
+**Note: used only for `mnemonic` accounts.**
 
 ##### Parameters
 
@@ -258,7 +261,9 @@ Note: used only for `mnemonic` accounts.
 | accountId | String | Unique ID of account                                                     |
 | iteration | Number | Iteration index (aka page for pagination) to generate bunch of addresses |
 
-Note: addresses count to generate per one iteration can be managed by `addressesCountToGenerate` constructor parameter.
+**Notes:**
+  * password is not needed for read-only accounts
+  * addresses count to generate per one iteration can be managed by `addressesCountToGenerate` constructor parameter.
 
 ##### Returns
 
@@ -272,7 +277,7 @@ const addresses = keystore.getAddressesFromMnemonic('JHJ23jG^*DGHj667s', '110ec5
 
 #### getMnemonic(password, accountId)
 
-Note: used only for `mnemonic` accounts.
+**Note: used only for `mnemonic` accounts.**
 
 ##### Parameters
 
@@ -321,6 +326,23 @@ Deserialized keystore data for restoring of backup.
 const backupData = '{"accounts":[{"type":"mnemonic","id":"2e820ddb-a9ce-43e1-b7ec-dbed59eec7e9",...'
 const keystoreDeserializedData = keystore.deserialize(backupData)
 ```
+
+#### setPassword(password, newPassword)
+
+##### Parameters
+
+| Param        | Type   | Description              |
+| ------------ | ------ | ------------------------ |
+| password     | String | Keystore password        |
+| newPassword  | String | New keystore password    |
+
+
+##### Example
+
+```javascript
+keystore.setPassword('JHJ23jG^*DGHj667s', 'Tw5E^g7djfd(29j')
+```
+
 ### Static methods
 
 #### isMnemonicValid(mnemonic)
