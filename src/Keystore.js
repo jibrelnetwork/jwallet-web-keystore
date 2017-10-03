@@ -14,18 +14,18 @@ const PRIVATE_KEY_LENGTH = 64
 class Keystore {
   constructor(props = {}) {
     this.accounts = props.accounts || []
-    this.defaultDerivationPath = props.defaultDerivationPath || "m/44'/0'/0'/0"
+    this.defaultDerivationPath = props.defaultDerivationPath || "m/44'/60'/0'/0"
     this.defaultEncryptionType = props.defaultEncryptionType || 'nacl.secretbox'
     this.addressesCountToGenerate = props.addressesCountToGenerate || 3
     this.paddedMnemonicLength = props.paddedMnemonicLength || 120
     this.saltByteCount = props.saltByteCount || 32
     this.scryptParams = props.scryptParams || { N: 2 ** 18, r: 8, p: 1 }
     this.derivedKeyLength = props.derivedKeyLength || 32
+    this.passwordConfig = props.passwordConfig || {}
     this.mnemonicType = 'mnemonic'
     this.addressType = 'address'
     this.checkPasswordData = null
     this.salt = utils.generateSalt(this.saltByteCount)
-    this.passwordConfig = props.passwordConfig || {}
     this.version = 1
   }
 
@@ -119,6 +119,25 @@ class Keystore {
     })
   }
 
+  getPrivateKey(password, accountId) {
+    const account = this.getAccount({ id: accountId })
+
+    this._checkAccountExist(account)
+    this._checkReadOnly(account)
+    this._checkPassword(password)
+
+    const { encrypted } = account
+    const dataToDecrypt = encrypted.privateKey
+
+    if (!dataToDecrypt) {
+      throw (new Error('Address is not setted yet'))
+    }
+
+    const decryptedData = this._decryptData(dataToDecrypt, password, true)
+
+    return utils.add0x(decryptedData)
+  }
+
   setAddress(password, accountId, addressIndex = 0) {
     const account = this.getAccount({ id: accountId, type: this.mnemonicType })
 
@@ -144,25 +163,6 @@ class Keystore {
         privateKey: this._encryptData(privateKey, password, true),
       },
     })
-  }
-
-  getPrivateKey(password, accountId) {
-    const account = this.getAccount({ id: accountId })
-
-    this._checkAccountExist(account)
-    this._checkReadOnly(account)
-    this._checkPassword(password)
-
-    const { encrypted } = account
-    const dataToDecrypt = encrypted.privateKey
-
-    if (!dataToDecrypt) {
-      throw (new Error('Address is not setted yet'))
-    }
-
-    const decryptedData = this._decryptData(dataToDecrypt, password, true)
-
-    return utils.add0x(decryptedData)
   }
 
   getAddressesFromMnemonic(password, accountId, iteration) {

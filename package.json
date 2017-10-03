@@ -6,9 +6,9 @@
   "scripts": {
     "lint": "./node_modules/.bin/eslint ./src",
     "test": "./node_modules/.bin/mocha --compilers babel-register",
-    "compile": "./node_modules/.bin/babel ./src --out-dir ./lib",
     "clean": "rm -rf ./lib",
-    "build": "npm run lint && npm run clean && npm run compile && npm test"
+    "compile": "npm run clean && ./node_modules/.bin/babel ./src --out-dir ./lib",
+    "build": "npm run lint && npm run compile && npm test"
   },
   "repository": {
     "type": "git",
