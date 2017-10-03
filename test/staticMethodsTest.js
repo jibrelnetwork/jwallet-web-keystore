@@ -9,8 +9,15 @@ const mnemonicBufferLength = 64
 
 const validPrivateKey = `0x${'1'.repeat(64)}`
 const invalidPrivateKey = `${validPrivateKey}%`
+
 const validPrivateKeyLength = 64
 const invalidPrivateKeyLength = 65
+
+const validPassword = 'qwe123RTY$%^'
+const invalidPassword = '111111'
+
+const passwordTestsCount = 7
+const customPasswordConfig = { minLength: 20 }
 
 const mnemonicWordsCount = 12
 
@@ -62,6 +69,37 @@ describe('isHashStringValid', function() {
 
     isPrivateKeyValid2.should.be.a.Boolean()
     isPrivateKeyValid2.should.be.equal(false)
+
+    done()
+  })
+})
+
+describe('testPassword', function() {
+  it('should return failed/passed tests count and errors if any', function(done) {
+    const testValidPasswordResult = Keystore.testPassword(validPassword)
+    const testInvalidPasswordResult = Keystore.testPassword(invalidPassword)
+    const testPasswordResultWithCustomConfig = Keystore.testPassword(validPassword, customPasswordConfig)
+
+    testValidPasswordResult.should.be.an.Object()
+    testValidPasswordResult.failedTests.should.be.equal(0)
+    testValidPasswordResult.passedTests.should.be.equal(passwordTestsCount)
+    testValidPasswordResult.errors.should.be.an.Array()
+    testValidPasswordResult.errors.length.should.be.equal(0)
+
+    testInvalidPasswordResult.should.be.an.Object()
+    testInvalidPasswordResult.failedTests.should.be.equal(5)
+    testInvalidPasswordResult.passedTests.should.be.equal(2)
+    testInvalidPasswordResult.errors.should.be.an.Array()
+    testInvalidPasswordResult.errors.length.should.be.equal(5)
+
+    testPasswordResultWithCustomConfig.should.be.an.Object()
+    testPasswordResultWithCustomConfig.failedTests.should.be.equal(1)
+    testPasswordResultWithCustomConfig.passedTests.should.be.equal(6)
+    testPasswordResultWithCustomConfig.errors.should.be.an.Array()
+    testPasswordResultWithCustomConfig.errors.length.should.be.equal(1)
+    testPasswordResultWithCustomConfig.errors[0].should.be.equal(
+      `The password must be at least ${customPasswordConfig.minLength} characters long.`
+    )
 
     done()
   })

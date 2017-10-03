@@ -126,32 +126,6 @@ describe('address read only account', function() {
     }
   })
 
-  it('setAccountName() should throw error (empty new name)', function(done) {
-    try {
-      keystore.setAccountName(password, accountId, '')
-
-      done(new Error('Exception not thrown'))
-    } catch (e) {
-      e.should.be.an.Object()
-      e.message.should.be.equal('New account name should be not empty')
-
-      done()
-    }
-  })
-
-  it('setAccountName() should throw error (for not existed account)', function(done) {
-    try {
-      keystore.setAccountName(password, 'some_wrong_id')
-
-      done(new Error('Exception not thrown'))
-    } catch (e) {
-      e.should.be.an.Object()
-      e.message.should.be.equal('Account not found')
-
-      done()
-    }
-  })
-
   it('getPrivateKey() should throw error (for read only account)', function(done) {
     try {
       keystore.getPrivateKey(password, accountId)

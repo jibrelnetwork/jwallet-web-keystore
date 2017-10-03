@@ -15,6 +15,24 @@ let accountId
 describe('address account', function() {
   this.timeout(20000)
 
+  it('createAccount() should throw error (password is weak)', function(done) {
+    try {
+      keystore.createAccount({
+        privateKey,
+        accountName,
+        type: 'address',
+        password: 'some weak password',
+      })
+
+      done(new Error('Exception not thrown'))
+    } catch (e) {
+      e.should.be.an.Object()
+      e.message.should.be.equal('Password is too weak')
+
+      done()
+    }
+  })
+
   it('createAccount() should create account and return id of it', function(done) {
     accountId = keystore.createAccount({
       password,
@@ -47,8 +65,34 @@ describe('address account', function() {
     }
   })
 
+  it('setAccountName() should throw error (empty new name)', function(done) {
+    try {
+      keystore.setAccountName(accountId, '')
+
+      done(new Error('Exception not thrown'))
+    } catch (e) {
+      e.should.be.an.Object()
+      e.message.should.be.equal('New account name should be not empty')
+
+      done()
+    }
+  })
+
+  it('setAccountName() should throw error (for not existed account)', function(done) {
+    try {
+      keystore.setAccountName('some_wrong_id')
+
+      done(new Error('Exception not thrown'))
+    } catch (e) {
+      e.should.be.an.Object()
+      e.message.should.be.equal('Account not found')
+
+      done()
+    }
+  })
+
   it('setAccountName() should update account name', function(done) {
-    const account = keystore.setAccountName(password, accountId, updatedAccountName)
+    const account = keystore.setAccountName(accountId, updatedAccountName)
 
     account.id.should.be.equal(accountId)
     account.accountName.should.be.equal(updatedAccountName)

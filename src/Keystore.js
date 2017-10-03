@@ -5,7 +5,7 @@ const { find, findIndex } = require('lodash')
 
 const utils = require('./utils')
 const encryption = require('./encryption')
-
+const testPassword = require('./password')
 const { generateMnemonic, isMnemonicValid, isBip32XPublicKeyValid } = require('./mnemonic')
 
 const ADDRESS_LENGTH = 40
@@ -16,7 +16,7 @@ class Keystore {
     this.accounts = props.accounts || []
     this.defaultDerivationPath = props.defaultDerivationPath || "m/44'/0'/0'/0"
     this.defaultEncryptionType = props.defaultEncryptionType || 'nacl.secretbox'
-    this.privateKeysCountToGenerate = props.privateKeysCountToGenerate || 3
+    this.addressesCountToGenerate = props.addressesCountToGenerate || 3
     this.paddedMnemonicLength = props.paddedMnemonicLength || 120
     this.saltByteCount = props.saltByteCount || 32
     this.scryptParams = props.scryptParams || { N: 2 ** 18, r: 8, p: 1 }
@@ -25,6 +25,7 @@ class Keystore {
     this.addressType = 'address'
     this.checkPasswordData = null
     this.salt = utils.generateSalt(this.saltByteCount)
+    this.passwordConfig = props.passwordConfig || {}
     this.version = 1
   }
 
@@ -38,6 +39,10 @@ class Keystore {
 
   static isHashStringValid(hash, hashLength) {
     return utils.isHashStringValid(hash, hashLength)
+  }
+
+  static testPassword(password, passwordConfig) {
+    return testPassword(password, passwordConfig)
   }
 
   getAccounts() {
@@ -78,11 +83,10 @@ class Keystore {
     return accountData.id
   }
 
-  setAccountName(password, accountId, newName) {
+  setAccountName(accountId, newName) {
     const account = this.getAccount({ id: accountId })
 
     this._checkAccountExist(account)
-    this._checkPassword(password)
 
     if (!(newName && newName.length)) {
       throw (new Error('New account name should be not empty'))
@@ -315,8 +319,8 @@ class Keystore {
   }
 
   _generateAddresses(password, account, iteration = 0) {
-    const keyIndexStart = iteration * this.privateKeysCountToGenerate
-    const keyIndexEnd = keyIndexStart + this.privateKeysCountToGenerate
+    const keyIndexStart = iteration * this.addressesCountToGenerate
+    const keyIndexEnd = keyIndexStart + this.addressesCountToGenerate
 
     const addresses = []
 
@@ -433,6 +437,12 @@ class Keystore {
 
   _checkPassword(password) {
     if (!this.checkPasswordData) {
+      const testPasswordResult = testPassword(password, this.passwordConfig)
+
+      if (testPasswordResult.failedTests) {
+        throw (new Error('Password is too weak'))
+      }
+
       // for readOnly accounts we need to have some encrypted data to check password
       const checkPasswordData = utils.generateSalt(this.saltByteCount)
 
