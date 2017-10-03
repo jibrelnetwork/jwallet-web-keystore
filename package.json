@@ -1,5 +1,5 @@
 {
-  "name": "keystore",
+  "name": "blockchain-wallet-keystore",
   "version": "0.0.1",
   "description": "Keystore manager",
   "main": "index.js",
@@ -17,6 +17,8 @@
   "author": "Jibrel Network",
   "license": "MIT",
   "keywords": [
+    "blockchain",
+    "wallet",
     "keystore",
     "mnemonic",
     "key",

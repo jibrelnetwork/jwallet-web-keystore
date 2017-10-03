@@ -17,7 +17,7 @@ npm install keystore
 ```
 
 ```javascript
-const Keystore = require('keystore')
+const Keystore = require('blockchain-wallet-keystore')
 
 const keystore = new Keystore(props)
 ```
