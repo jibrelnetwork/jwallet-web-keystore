@@ -30,7 +30,7 @@ describe('serialize / deserialize', function() {
   })
 
   it('serialize() should serialize keystore data', function(done) {
-    serializedKeystoreData = keystore.serialize(password)
+    serializedKeystoreData = keystore.serialize()
 
     serializedKeystoreData.should.be.a.String()
     serializedKeystoreData.length.should.be.greaterThan(0)

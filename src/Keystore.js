@@ -202,9 +202,7 @@ class Keystore {
     return paddedMnemonic.trim()
   }
 
-  serialize(password) {
-    this._checkPassword(password)
-
+  serialize() {
     return JSON.stringify(this._getBackupData())
   }
 
