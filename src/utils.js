@@ -1,4 +1,4 @@
-const scrypt = require('scrypt')
+const scrypt = require('scrypt.js')
 const cryptoJS = require('crypto-js')
 const EC = require('elliptic').ec
 const { Random } = require('bitcore-lib').crypto
@@ -40,7 +40,8 @@ function getAddressFromPrivateKey(privateKey) {
 }
 
 function deriveKeyFromPassword(password, scryptParams, derivedKeyLength, salt) {
-  const derivedKey = scrypt.hashSync(password, scryptParams, derivedKeyLength, salt)
+  const { N, r, p } = scryptParams
+  const derivedKey = scrypt(password, salt, N, r, p, derivedKeyLength)
 
   return new Uint8Array(derivedKey)
 }
