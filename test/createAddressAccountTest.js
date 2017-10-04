@@ -126,6 +126,17 @@ describe('address account', function() {
     done()
   })
 
+  it('getDecryptedAccounts() should get current private key', function(done) {
+    const decryptedAccounts = keystore.getDecryptedAccounts(newPassword)
+
+    decryptedAccounts.should.be.an.Array()
+    decryptedAccounts.length.should.be.equal(1)
+    decryptedAccounts[0].accountName.should.be.equal(updatedAccountName)
+    decryptedAccounts[0].privateKey.should.be.equal(privateKey)
+
+    done()
+  })
+
   it('removeAccounts() should remove all accounts', function(done) {
     keystore.removeAccounts()
 

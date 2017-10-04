@@ -67,7 +67,6 @@ Instantiates `Keystore` object with provided `props`.
 | props.accounts                 | Array  | []                         | Array of accounts             |
 | props.defaultDerivationPath    | String | "m/44'/60'/0'/0"           | Default derivation path for new `Mnemonic` accounts |
 | props.defaultEncryptionType    | String | 'nacl.secretbox'           | Default encryption type. Currently `nacl.secretbox` is only one supported |
-| props.addressesCountToGenerate | Number | 3                          | Count of addresses to generate from mnemonic per one page / iteration |
 | props.paddedMnemonicLength     | Number | 120                        | Mnemonic will be padded left with this size before encryption |
 | props.saltByteCount            | Number | 32                         | Count of bytes of generated salt for password strength |
 | props.scryptParams             | Object | { N: 2 ** 18, r: 8, p: 1 } | Scrypt params for key deriving |
@@ -213,7 +212,7 @@ const privateKey = keystore.getPrivateKey('JHJ23jG^*DGHj667s', '110ec58a-a0f2-4a
 | accountId    | String | Unique ID of account                                           |
 | addressIndex | String | Index of address to derive from `mnemonic` / `bip32XPublicKey` |
 
-**Note: password is not needed for read-only accounts**
+**Note: password is not required for read-only accounts**
 
 ##### Returns
 
@@ -249,7 +248,7 @@ Updated account.
 const updatedAccount = keystore.setDerivationPath('JHJ23jG^*DGHj667s', '110ec58a-a0f2-4ac4-8393-c977d813b8d1', "m/44'/61'/0'/0")
 ```
 
-#### getAddressesFromMnemonic(password, accountId, iteration)
+#### getAddressesFromMnemonic(password, accountId, iteration, limit)
 
 **Note: used only for `mnemonic` accounts.**
 
@@ -260,10 +259,9 @@ const updatedAccount = keystore.setDerivationPath('JHJ23jG^*DGHj667s', '110ec58a
 | password  | String | Keystore password                                                        |
 | accountId | String | Unique ID of account                                                     |
 | iteration | Number | Iteration index (aka page for pagination) to generate bunch of addresses |
+| limit     | Number | Count of addresses to generate from mnemonic per one page / iteration    |
 
-**Notes:**
-  * password is not needed for read-only accounts
-  * addresses count to generate per one iteration can be managed by `addressesCountToGenerate` constructor parameter.
+**Note: password is not required for read-only accounts**
 
 ##### Returns
 
@@ -272,7 +270,7 @@ List of generated addresses.
 ##### Example
 
 ```javascript
-const addresses = keystore.getAddressesFromMnemonic('JHJ23jG^*DGHj667s', '110ec58a-a0f2-4ac4-8393-c977d813b8d1', 3)
+const addresses = keystore.getAddressesFromMnemonic('JHJ23jG^*DGHj667s', '110ec58a-a0f2-4ac4-8393-c977d813b8d1', 3, 10)
 ```
 
 #### getMnemonic(password, accountId)
@@ -327,6 +325,24 @@ const backupData = '{"accounts":[{"type":"mnemonic","id":"2e820ddb-a9ce-43e1-b7e
 const keystoreDeserializedData = keystore.deserialize(backupData)
 ```
 
+#### getDecryptedAccounts(password)
+
+##### Parameters
+
+| Param    | Type   | Description       |
+| -------- | ------ | ----------------- |
+| password | String | Keystore password |
+
+#### Returns
+
+Accounts with decrypted data.
+
+##### Example
+
+```javascript
+const decryptedAccounts = keystore.getDecryptedAccounts('JHJ23jG^*DGHj667s')
+```
+
 #### setPassword(password, newPassword)
 
 ##### Parameters
@@ -335,7 +351,6 @@ const keystoreDeserializedData = keystore.deserialize(backupData)
 | ------------ | ------ | ------------------------ |
 | password     | String | Keystore password        |
 | newPassword  | String | New keystore password    |
-
 
 ##### Example
 

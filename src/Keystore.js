@@ -16,7 +16,6 @@ class Keystore {
     this.accounts = props.accounts || []
     this.defaultDerivationPath = props.defaultDerivationPath || "m/44'/60'/0'/0"
     this.defaultEncryptionType = props.defaultEncryptionType || 'nacl.secretbox'
-    this.addressesCountToGenerate = props.addressesCountToGenerate || 3
     this.paddedMnemonicLength = props.paddedMnemonicLength || 120
     this.saltByteCount = props.saltByteCount || 32
     this.scryptParams = props.scryptParams || { N: 2 ** 18, r: 8, p: 1 }
@@ -226,6 +225,27 @@ class Keystore {
     return data
   }
 
+  getDecryptedAccounts(password) {
+    this._checkPassword(password)
+
+    return this.accounts.map((account) => {
+      const { isReadOnly, type, accountName, address, encrypted } = account
+      const { privateKey, mnemonic } = encrypted
+
+      const decryptedPrivateKey = privateKey ? this._decryptData(privateKey, password) : null
+      const decryptedMnemonic = mnemonic ? this._decryptData(mnemonic, password) : null
+
+      return {
+        accountName,
+        type,
+        readOnly: isReadOnly ? 'yes' : 'no',
+        address: address || 'n/a',
+        privateKey: decryptedPrivateKey || 'n/a',
+        mnemonic: decryptedMnemonic || 'n/a',
+      }
+    })
+  }
+
   setPassword(password, newPassword) {
     this._checkPassword(password)
     this._setPasswordDataToCheck(newPassword)
@@ -344,9 +364,9 @@ class Keystore {
     })
   }
 
-  _generateAddresses(password, account, iteration = 0) {
-    const keyIndexStart = iteration * this.addressesCountToGenerate
-    const keyIndexEnd = keyIndexStart + this.addressesCountToGenerate
+  _generateAddresses(password, account, iteration = 0, limit = 5) {
+    const keyIndexStart = iteration * limit
+    const keyIndexEnd = keyIndexStart + limit
 
     const addresses = []
 

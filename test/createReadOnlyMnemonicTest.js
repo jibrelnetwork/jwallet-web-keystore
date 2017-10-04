@@ -5,7 +5,7 @@ const keystore = new Keystore()
 const password = 'JHJ23jG^*DGHj667s'
 const bip32XPublicKey = 'xpub6DZVENYSZsMW1D48vLG924qPaxz83TZc43tK7zMbCdFcv1La9pqe6pBiuxdzDNjufXRW42CfJEK8indRdhfDoWvYfZDZS1xjkZrQB5iYtHy'
 const accountName = 'mnemonic read only account'
-const addressesCountToDerive = 3
+const addressesCountToDerive = 5
 const accountIdLength = 36
 const addressLength = 42
 
