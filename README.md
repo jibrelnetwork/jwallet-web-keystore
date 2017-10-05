@@ -396,16 +396,16 @@ Mnemonic - 12 English words splited by space.
 const mnemonic = Keystore.generateMnemonic()
 ```
 
-#### isHexStringValid(hash, hashLength)
+#### isHexStringValid(hex, hexLength)
 
-| Param      | Type   | Description                                 |
-| ---------- | ------ | ------------------------------------------- |
-| hash       | String | Hash string to check                        |
-| hashLength | Number | Hash length (should be equal `hash.length`) |
+| Param     | Type   | Description                               |
+| --------- | ------ | ----------------------------------------- |
+| hex       | String | Hexadecimal string to check               |
+| hexLength | Number | Hex length (should be equal `hex.length`) |
 
 ##### Returns
 
-`true` if hash is valid and `false` otherwise.
+`true` if hex is valid and `false` otherwise.
 
 ##### Example
 
