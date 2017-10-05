@@ -396,7 +396,7 @@ Mnemonic - 12 English words splited by space.
 const mnemonic = Keystore.generateMnemonic()
 ```
 
-#### isHashStringValid(hash, hashLength)
+#### isHexStringValid(hash, hashLength)
 
 | Param      | Type   | Description                                 |
 | ---------- | ------ | ------------------------------------------- |
@@ -410,7 +410,7 @@ const mnemonic = Keystore.generateMnemonic()
 ##### Example
 
 ```javascript
-const isValid = Keystore.isHashStringValid('0x8a02a99ee7a801da6996a2dacc406ffa5190dc9c', 42)
+const isValid = Keystore.isHexStringValid('0x8a02a99ee7a801da6996a2dacc406ffa5190dc9c', 42)
 ```
 
 #### testPassword(password, passwordConfig)

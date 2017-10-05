@@ -36,8 +36,8 @@ class Keystore {
     return generateMnemonic(entropy, randomBufferLength)
   }
 
-  static isHashStringValid(hash, hashLength) {
-    return utils.isHashStringValid(hash, hashLength)
+  static isHexStringValid(hash, hashLength) {
+    return utils.isHexStringValid(hash, hashLength)
   }
 
   static testPassword(password, passwordConfig) {
@@ -183,7 +183,7 @@ class Keystore {
     })
   }
 
-  getAddressesFromMnemonic(password, accountId, iteration) {
+  getAddressesFromMnemonic(password, accountId, iteration, limit) {
     const account = this.getAccount({ id: accountId, type: this.mnemonicType })
 
     this._checkAccountExist(account)
@@ -192,7 +192,7 @@ class Keystore {
       this._checkPassword(password)
     }
 
-    return this._generateAddresses(password, account, iteration)
+    return this._generateAddresses(password, account, iteration, limit)
   }
 
   getMnemonic(password, accountId) {
@@ -299,7 +299,7 @@ class Keystore {
   _createAddressAccount(props) {
     const { id, password, privateKey, accountName } = props
 
-    if (!utils.isHashStringValid(privateKey, PRIVATE_KEY_LENGTH)) {
+    if (!utils.isHexStringValid(privateKey, PRIVATE_KEY_LENGTH)) {
       throw (new Error('Private Key is invalid'))
     }
 
@@ -320,7 +320,7 @@ class Keystore {
   _createReadOnlyAddressAccount(props) {
     const { id, address, accountName } = props
 
-    if (!utils.isHashStringValid(address, ADDRESS_LENGTH)) {
+    if (!utils.isHexStringValid(address, ADDRESS_LENGTH)) {
       throw (new Error('Address is invalid'))
     }
 

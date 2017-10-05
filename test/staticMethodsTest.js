@@ -59,10 +59,10 @@ describe('isMnemonicValid', function() {
   })
 })
 
-describe('isHashStringValid', function() {
+describe('isHexStringValid', function() {
   it('should return true when private key is correct', function(done) {
-    const isPrivateKeyValid1 = Keystore.isHashStringValid(validPrivateKey, validPrivateKeyLength)
-    const isPrivateKeyValid2 = Keystore.isHashStringValid(invalidPrivateKey, invalidPrivateKeyLength)
+    const isPrivateKeyValid1 = Keystore.isHexStringValid(validPrivateKey, validPrivateKeyLength)
+    const isPrivateKeyValid2 = Keystore.isHexStringValid(invalidPrivateKey, invalidPrivateKeyLength)
 
     isPrivateKeyValid1.should.be.a.Boolean()
     isPrivateKeyValid1.should.be.equal(true)

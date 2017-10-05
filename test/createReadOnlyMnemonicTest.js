@@ -6,6 +6,7 @@ const password = 'JHJ23jG^*DGHj667s'
 const bip32XPublicKey = 'xpub6DZVENYSZsMW1D48vLG924qPaxz83TZc43tK7zMbCdFcv1La9pqe6pBiuxdzDNjufXRW42CfJEK8indRdhfDoWvYfZDZS1xjkZrQB5iYtHy'
 const accountName = 'mnemonic read only account'
 const addressesCountToDerive = 5
+const customAddressesCountToDerive = 10
 const accountIdLength = 36
 const addressLength = 42
 
@@ -60,10 +61,10 @@ describe('mnemonic read only account', function() {
   })
 
   it('getAddressesFromMnemonic() should derive addresses from mnemonic with default path', function(done) {
-    const addresses = keystore.getAddressesFromMnemonic(null, accountId)
+    const addresses = keystore.getAddressesFromMnemonic(null, accountId, 0, customAddressesCountToDerive)
 
     addresses.should.be.an.Array()
-    addresses.length.should.be.equal(addressesCountToDerive)
+    addresses.length.should.be.equal(customAddressesCountToDerive)
 
     firstDerivedAddress = addresses[0]
 
