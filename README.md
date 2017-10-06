@@ -427,12 +427,11 @@ const isValid = Keystore.isHexStringValid('0x8a02a99ee7a801da6996a2dacc406ffa519
 Object that contains following fields:
 
   * errors - error messages array
-  * failedTests - failed tests count
-  * passedTests - passed tests count
+  * failedTests - failed test names array
+  * passedTests - passed test names array
 
 ##### Example
 
 ```javascript
 const result = Keystore.testPassword('JHJ23jG^*DGHj667s')
-console.log(result) // { errors: [], failedTests: 0, passedTests: 7 }
 ```
