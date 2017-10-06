@@ -54,15 +54,15 @@ function testSpecialCharacter(password) {
   return null
 }
 
-const tests = [
-  testPasswordMinLength,
-  testPasswordMaxLength,
-  testRepeatingCharacters,
-  testLowercaseLetter,
-  testUppercaseLetter,
-  testNumber,
-  testSpecialCharacter,
-]
+const tests = {
+  minlen: testPasswordMinLength,
+  maxlen: testPasswordMaxLength,
+  repeat: testRepeatingCharacters,
+  lowerc: testLowercaseLetter,
+  upperc: testUppercaseLetter,
+  number: testNumber,
+  specch: testSpecialCharacter,
+}
 
 const defaultConfig = { maxLength: 128, minLength: 10 }
 
@@ -71,17 +71,17 @@ function testPassword(password, config = {}) {
 
   const result = {
     errors: [],
-    failedTests: 0,
-    passedTests: 0,
+    failedTests: [],
+    passedTests: [],
   }
 
-  tests.forEach((test) => {
-    const testResult = test(password, mergedConfig)
+  Object.keys(tests).forEach((test) => {
+    const testResult = tests[test](password, mergedConfig)
 
     if (!testResult) {
-      result.passedTests += 1
+      result.passedTests.push(test)
     } else {
-      result.failedTests += 1
+      result.failedTests.push(test)
       result.errors.push(testResult)
     }
   })

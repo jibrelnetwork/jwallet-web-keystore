@@ -504,7 +504,7 @@ class Keystore {
   _setPasswordDataToCheck(password) {
     const testPasswordResult = testPassword(password, this.passwordConfig)
 
-    if (testPasswordResult.failedTests) {
+    if (testPasswordResult.failedTests.length) {
       throw (new Error('Password is too weak'))
     }
 

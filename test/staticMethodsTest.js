@@ -81,21 +81,21 @@ describe('testPassword', function() {
     const testPasswordResultWithCustomConfig = Keystore.testPassword(validPassword, customPasswordConfig)
 
     testValidPasswordResult.should.be.an.Object()
-    testValidPasswordResult.failedTests.should.be.equal(0)
-    testValidPasswordResult.passedTests.should.be.equal(passwordTestsCount)
+    testValidPasswordResult.failedTests.should.be.an.Array()
+    testValidPasswordResult.failedTests.length.should.be.equal(0)
+    testValidPasswordResult.passedTests.should.be.an.Array()
+    testValidPasswordResult.passedTests.length.should.be.equal(passwordTestsCount)
     testValidPasswordResult.errors.should.be.an.Array()
     testValidPasswordResult.errors.length.should.be.equal(0)
 
     testInvalidPasswordResult.should.be.an.Object()
-    testInvalidPasswordResult.failedTests.should.be.equal(5)
-    testInvalidPasswordResult.passedTests.should.be.equal(2)
-    testInvalidPasswordResult.errors.should.be.an.Array()
+    testInvalidPasswordResult.failedTests.length.should.be.equal(5)
+    testInvalidPasswordResult.passedTests.length.should.be.equal(2)
     testInvalidPasswordResult.errors.length.should.be.equal(5)
 
     testPasswordResultWithCustomConfig.should.be.an.Object()
-    testPasswordResultWithCustomConfig.failedTests.should.be.equal(1)
-    testPasswordResultWithCustomConfig.passedTests.should.be.equal(6)
-    testPasswordResultWithCustomConfig.errors.should.be.an.Array()
+    testPasswordResultWithCustomConfig.failedTests.length.should.be.equal(1)
+    testPasswordResultWithCustomConfig.passedTests.length.should.be.equal(6)
     testPasswordResultWithCustomConfig.errors.length.should.be.equal(1)
     testPasswordResultWithCustomConfig.errors[0].should.be.equal(
       `The password must be at least ${customPasswordConfig.minLength} characters long.`
