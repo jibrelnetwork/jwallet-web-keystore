@@ -13,7 +13,7 @@ Also Keystore API provides several [utility methods](#static-methods) for workin
 ## Get Started
 
 ```
-npm install keystore
+npm install jwallet-web-keystore
 ```
 
 ```javascript
