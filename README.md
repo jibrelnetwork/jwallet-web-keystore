@@ -1,4 +1,4 @@
-# Keystore
+# jwallet-web-keystore
 
 Library for ethereum blockchain accounts management.
 
@@ -17,7 +17,7 @@ npm install keystore
 ```
 
 ```javascript
-const Keystore = require('blockchain-wallet-keystore')
+const Keystore = require('jwallet-web-keystore')
 
 const keystore = new Keystore(props)
 ```

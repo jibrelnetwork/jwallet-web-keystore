@@ -98,7 +98,7 @@ describe('testPassword', function() {
     testPasswordResultWithCustomConfig.passedTests.length.should.be.equal(6)
     testPasswordResultWithCustomConfig.errors.length.should.be.equal(1)
     testPasswordResultWithCustomConfig.errors[0].should.be.equal(
-      `The password must be at least ${customPasswordConfig.minLength} characters long.`
+      `The password must be at least ${customPasswordConfig.minLength} characters long`
     )
 
     done()

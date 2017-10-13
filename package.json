@@ -1,7 +1,7 @@
 {
-  "name": "blockchain-wallet-keystore",
-  "version": "0.0.1",
-  "description": "Keystore manager",
+  "name": "jwallet-web-keystore",
+  "version": "0.1.0",
+  "description": "Library for ethereum blockchain accounts management",
   "main": "index.js",
   "scripts": {
     "lint": "./node_modules/.bin/eslint ./src",
@@ -12,11 +12,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/jibrelnetwork/keystore.git"
+    "url": "git+https://github.com/jibrelnetwork/jwallet-web-keystore.git"
   },
   "author": "Jibrel Network",
   "license": "MIT",
   "keywords": [
+    "jibrel",
+    "jibrelnetwork",
+    "jwallet",
     "blockchain",
     "wallet",
     "keystore",
@@ -31,9 +34,9 @@
     "derivation"
   ],
   "bugs": {
-    "url": "https://github.com/jibrelnetwork/keystore/issues"
+    "url": "https://github.com/jibrelnetwork/jwallet-web-keystore/issues"
   },
-  "homepage": "https://github.com/jibrelnetwork/keystore#readme",
+  "homepage": "https://github.com/jibrelnetwork/jwallet-web-keystore#readme",
   "dependencies": {
     "bitcore-lib": "0.14.0",
     "bitcore-mnemonic": "1.2.5",
