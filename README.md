@@ -398,10 +398,10 @@ const mnemonic = Keystore.generateMnemonic()
 
 #### isHexStringValid(hex, hexLength)
 
-| Param     | Type   | Description                               |
-| --------- | ------ | ----------------------------------------- |
-| hex       | String | Hexadecimal string to check               |
-| hexLength | Number | Hex length (should be equal `hex.length`) |
+| Param     | Type   | Description                                                   |
+| --------- | ------ | ------------------------------------------------------------- |
+| hex       | String | Hexadecimal string to check                                   |
+| hexLength | Number | Hex length (should be equal `hex.length` without `0x` prefix) |
 
 ##### Returns
 
@@ -410,7 +410,7 @@ const mnemonic = Keystore.generateMnemonic()
 ##### Example
 
 ```javascript
-const isValid = Keystore.isHexStringValid('0x8a02a99ee7a801da6996a2dacc406ffa5190dc9c', 42)
+const isValid = Keystore.isHexStringValid('0x8a02a99ee7a801da6996a2dacc406ffa5190dc9c', 40)
 ```
 
 #### testPassword(password, passwordConfig)
