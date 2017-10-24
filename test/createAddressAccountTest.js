@@ -6,10 +6,14 @@ const password = 'JHJ23jG^*DGHj667s'
 const newPassword = 'Tw5E^g7djfd(29j'
 const accountName = 'address account'
 const updatedAccountName = 'updated address account'
-const privateKey = `0x${'1'.repeat(64)}`
 const accountIdLength = 36
 const addressLength = 42
 const privateKeyLength = 66
+
+const privateKeyAddressPair = {
+  privateKey: '0xa7fcb4efc392d2c8983cbfe64063f994f85120e60843407af95907d905d0dc9f',
+  address: '0xb5c99109ded6212f667b9467a42dad1f195cdba9',
+}
 
 let accountId
 
@@ -19,10 +23,10 @@ describe('address account', function() {
   it('createAccount() should throw error (password is weak)', function(done) {
     try {
       keystore.createAccount({
-        privateKey,
         accountName,
         type: 'address',
         password: 'some weak password',
+        privateKey: privateKeyAddressPair.privateKey,
       })
 
       done(new Error('Exception not thrown'))
@@ -37,9 +41,9 @@ describe('address account', function() {
   it('createAccount() should create account and return id of it', function(done) {
     accountId = keystore.createAccount({
       password,
-      privateKey,
       accountName,
       type: 'address',
+      privateKey: privateKeyAddressPair.privateKey,
     })
 
     accountId.should.be.a.String()
@@ -48,11 +52,28 @@ describe('address account', function() {
     done()
   })
 
+  it('createAccount() [READ ONLY] should throw error (account with this address exists)', function(done) {
+    try {
+      keystore.createAccount({
+        password,
+        type: 'address',
+        isReadOnly: true,
+        address: privateKeyAddressPair.address,
+      })
+
+      done(new Error('Exception not thrown'))
+    } catch (e) {
+      e.should.be.an.Object()
+      e.message.should.be.equal('Account with this address already exists')
+
+      done()
+    }
+  })
+
   it('createAccount() should throw error (privateKey is invalid)', function(done) {
     try {
       keystore.createAccount({
         password,
-        accountName,
         type: 'address',
         privateKey: 'qwert',
       })
@@ -92,6 +113,19 @@ describe('address account', function() {
     }
   })
 
+  it('setAccountName() should throw error (account with this name exists)', function(done) {
+    try {
+      keystore.setAccountName(accountId, accountName)
+
+      done(new Error('Exception not thrown'))
+    } catch (e) {
+      e.should.be.an.Object()
+      e.message.should.be.equal('Account with this name already exists')
+
+      done()
+    }
+  })
+
   it('setAccountName() should update account name', function(done) {
     const account = keystore.setAccountName(accountId, updatedAccountName)
 
@@ -121,7 +155,7 @@ describe('address account', function() {
 
     currentPrivateKey.should.be.a.String()
     currentPrivateKey.length.should.be.equal(privateKeyLength)
-    currentPrivateKey.should.be.equal(privateKey)
+    currentPrivateKey.should.be.equal(privateKeyAddressPair.privateKey)
 
     done()
   })
@@ -132,7 +166,7 @@ describe('address account', function() {
     decryptedAccounts.should.be.an.Array()
     decryptedAccounts.length.should.be.equal(1)
     decryptedAccounts[0].accountName.should.be.equal(updatedAccountName)
-    decryptedAccounts[0].privateKey.should.be.equal(privateKey)
+    decryptedAccounts[0].privateKey.should.be.equal(privateKeyAddressPair.privateKey)
 
     done()
   })

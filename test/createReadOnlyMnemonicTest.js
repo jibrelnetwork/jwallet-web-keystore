@@ -35,7 +35,6 @@ describe('mnemonic read only account', function() {
     try {
       keystore.createAccount({
         password,
-        accountName,
         type: 'mnemonic',
         isReadOnly: true,
         bip32XPublicKey: 'some wrong key',
@@ -61,7 +60,7 @@ describe('mnemonic read only account', function() {
   })
 
   it('getAddressesFromMnemonic() should derive addresses from mnemonic with default path', function(done) {
-    const addresses = keystore.getAddressesFromMnemonic(null, accountId, 0, customAddressesCountToDerive)
+    const addresses = keystore.getAddressesFromMnemonic(accountId, 0, customAddressesCountToDerive)
 
     addresses.should.be.an.Array()
     addresses.length.should.be.equal(customAddressesCountToDerive)
@@ -74,13 +73,14 @@ describe('mnemonic read only account', function() {
     done()
   })
 
-  it('setAddress() should set current address derived from mnemonic by index', function(done) {
-    const account = keystore.setAddress(null, accountId, 3)
+  it('setAddressIndex() should set current address index', function(done) {
+    const addressIndex = 3
+    const account = keystore.setAddressIndex(accountId, addressIndex)
 
     account.should.be.an.Object()
     account.id.should.be.equal(accountId)
-    account.address.should.be.a.String()
-    account.address.length.should.be.equal(addressLength)
+    account.addressIndex.should.be.a.Number()
+    account.addressIndex.should.be.equal(addressIndex)
 
     done()
   })

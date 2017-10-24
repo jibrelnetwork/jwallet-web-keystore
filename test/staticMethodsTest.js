@@ -10,8 +10,14 @@ const mnemonicBufferLength = 64
 const validPrivateKey = `0x${'1'.repeat(64)}`
 const invalidPrivateKey = `${validPrivateKey}%`
 
+const validBip32XPubKey = `xpub${'1'.repeat(107)}`
+const invalidBip32XPubKey = `${validBip32XPubKey}%`
+
 const validPrivateKeyLength = 64
 const invalidPrivateKeyLength = 65
+
+const validDerivationPath = "m/44'/60'/0'"
+const invalidDerivationPath = 'qwert'
 
 const validPassword = 'qwe123RTY$%^'
 const invalidPassword = '111111'
@@ -45,7 +51,7 @@ describe('generateMnemonic', function() {
 })
 
 describe('isMnemonicValid', function() {
-  it('should return true when generated Mnemonic is valid', function(done) {
+  it('should return true when Mnemonic is valid', function(done) {
     const isMnemonicValid1 = Keystore.isMnemonicValid(validMnemonic)
     const isMnemonicValid2 = Keystore.isMnemonicValid(invalidMnemonic)
 
@@ -54,6 +60,21 @@ describe('isMnemonicValid', function() {
 
     isMnemonicValid2.should.be.a.Boolean()
     isMnemonicValid2.should.be.equal(false)
+
+    done()
+  })
+})
+
+describe('isBip32XPublicKeyValid', function() {
+  it('should return true when xpub key is valid', function(done) {
+    const isXPubValid1 = Keystore.isBip32XPublicKeyValid(validBip32XPubKey)
+    const isXPubValid2 = Keystore.isBip32XPublicKeyValid(invalidBip32XPubKey)
+
+    isXPubValid1.should.be.a.Boolean()
+    isXPubValid1.should.be.equal(true)
+
+    isXPubValid2.should.be.a.Boolean()
+    isXPubValid2.should.be.equal(false)
 
     done()
   })
@@ -69,6 +90,21 @@ describe('isHexStringValid', function() {
 
     isPrivateKeyValid2.should.be.a.Boolean()
     isPrivateKeyValid2.should.be.equal(false)
+
+    done()
+  })
+})
+
+describe('isDerivationPathValid', function() {
+  it('should return true when xpub key is valid', function(done) {
+    const isDerivationPathValid1 = Keystore.isDerivationPathValid(validDerivationPath)
+    const isDerivationPathValid2 = Keystore.isDerivationPathValid(invalidDerivationPath)
+
+    isDerivationPathValid1.should.be.a.Boolean()
+    isDerivationPathValid1.should.be.equal(true)
+
+    isDerivationPathValid2.should.be.a.Boolean()
+    isDerivationPathValid2.should.be.equal(false)
 
     done()
   })

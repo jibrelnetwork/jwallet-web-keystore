@@ -24,8 +24,10 @@ function getAddressFromPublicKey(publicKey) {
 }
 
 function getAddressFromPrivateKey(privateKey) {
+  const privateKeyWithoutHexPrefix = privateKey.replace(/^0x/i, '')
+
   const keyPair = ec.genKeyPair()
-  keyPair._importPrivate(privateKey, 'hex')
+  keyPair._importPrivate(privateKeyWithoutHexPrefix, 'hex')
 
   return getAddressFromKeyPair(keyPair)
 }

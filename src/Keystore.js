@@ -10,6 +10,7 @@ const { generateMnemonic, isMnemonicValid, isBip32XPublicKeyValid } = require('.
 
 const ADDRESS_LENGTH = 40
 const PRIVATE_KEY_LENGTH = 64
+const ADDRESSES_PER_ITERATION_LIMIT = 5
 
 class Keystore {
   constructor(props = {}) {
@@ -28,16 +29,24 @@ class Keystore {
     this.version = 1
   }
 
-  static isMnemonicValid(mnemonic) {
-    return isMnemonicValid(mnemonic)
-  }
-
   static generateMnemonic(entropy, randomBufferLength = 32) {
     return generateMnemonic(entropy, randomBufferLength)
   }
 
+  static isMnemonicValid(mnemonic) {
+    return isMnemonicValid(mnemonic)
+  }
+
+  static isBip32XPublicKeyValid(bip32XPublicKey) {
+    return isBip32XPublicKeyValid(bip32XPublicKey)
+  }
+
   static isHexStringValid(hash, hashLength) {
     return utils.isHexStringValid(hash, hashLength)
+  }
+
+  static isDerivationPathValid(derivationPath) {
+    return bitcore.HDPrivateKey.isValidPath(derivationPath)
   }
 
   static testPassword(password, passwordConfig) {
@@ -53,7 +62,7 @@ class Keystore {
       throw (new Error('Account ID not provided'))
     }
 
-    return find(this.accounts, findProps)
+    return this._getAccount(findProps)
   }
 
   removeAccount(accountId) {
@@ -74,6 +83,9 @@ class Keystore {
 
   createAccount(props) {
     const { type, isReadOnly, password, accountName, ...otherProps } = props
+
+    this._checkAccountUniqueness({ accountName }, 'name')
+
     const extendedAccountInfo = this._getExtendedAccountInfo(accountName)
     const accountData = { ...otherProps, ...extendedAccountInfo, password }
 
@@ -98,65 +110,41 @@ class Keystore {
     return accountData.id
   }
 
-  setAccountName(accountId, newName) {
+  setAccountName(accountId, accountName) {
     const account = this.getAccount({ id: accountId })
 
     this._checkAccountExist(account)
+    this._checkAccountUniqueness({ accountName }, 'name')
 
-    if (!(newName && newName.length)) {
+    if (!(accountName && accountName.length)) {
       throw (new Error('New account name should be not empty'))
     }
 
-    return this._setAccount(account, { accountName: newName })
+    return this._setAccount(account, { accountName })
   }
 
-  getPrivateKey(password, accountId) {
+  getPrivateKey(password, accountId, addressIndex = 0) {
     const account = this.getAccount({ id: accountId })
 
     this._checkAccountExist(account)
     this._checkReadOnly(account)
     this._checkPassword(password)
 
-    const { encrypted } = account
-    const dataToDecrypt = encrypted.privateKey
+    const { type, encrypted } = account
 
-    if (!dataToDecrypt) {
-      throw (new Error('Address is not setted yet'))
-    }
+    const privateKey = (type === 'address')
+      ? this._decryptData(encrypted.privateKey, password, true)
+      : this._getPrivateKeyFromMnemonic(password, account, addressIndex)
 
-    const decryptedData = this._decryptData(dataToDecrypt, password, true)
-
-    return utils.add0x(decryptedData)
+    return utils.add0x(privateKey)
   }
 
-  setAddress(password, accountId, addressIndex = 0) {
+  setAddressIndex(accountId, addressIndex = 0) {
     const account = this.getAccount({ id: accountId, type: this.mnemonicType })
 
     this._checkAccountExist(account)
 
-    if (!account.isReadOnly) {
-      this._checkPassword(password)
-    }
-
-    const { encrypted, isReadOnly } = account
-    const hdRoot = this._getHdRoot(password, account)
-    const generatedKey = this._generateKey(hdRoot, addressIndex)
-
-    if (isReadOnly) {
-      return this._setAccount(account, {
-        address: utils.getAddressFromPublicKey(generatedKey.publicKey.toString()),
-      })
-    }
-
-    const privateKey = generatedKey.privateKey.toString()
-
-    return this._setAccount(account, {
-      address: utils.getAddressFromPrivateKey(privateKey),
-      encrypted: {
-        ...encrypted,
-        privateKey: this._encryptData(privateKey, password, true),
-      },
-    })
+    return this._setAccount(account, { addressIndex })
   }
 
   setDerivationPath(password, accountId, newDerivationPath) {
@@ -166,33 +154,32 @@ class Keystore {
     this._checkReadOnly(account)
     this._checkPassword(password)
 
-    if (!(newDerivationPath && newDerivationPath.length)) {
-      throw (new Error('New derivation path should be not empty'))
+    if (!this.constructor.isDerivationPathValid(newDerivationPath)) {
+      throw (new Error('Invalid derivation path'))
     }
 
-    const { encrypted } = account
-    const mnemonic = this._decryptData(encrypted.mnemonic, password)
-    const hdPath = this._getHdPath(mnemonic, newDerivationPath)
+    const { encrypted, derivationPath } = account
+
+    if (newDerivationPath === derivationPath) {
+      throw (new Error('Can not set the same derivation path'))
+    }
+
+    const xpub = this._getXPubFromMnemonic(password, encrypted.mnemonic, newDerivationPath)
+
+    this._checkAccountUniqueness({ bip32XPublicKey: xpub }, 'xpub')
 
     return this._setAccount(account, {
       derivationPath: newDerivationPath,
-      encrypted: {
-        ...encrypted,
-        hdPath: this._encryptData(hdPath, password),
-      },
+      bip32XPublicKey: xpub,
     })
   }
 
-  getAddressesFromMnemonic(password, accountId, iteration, limit) {
+  getAddressesFromMnemonic(accountId, iteration = 0, limit = ADDRESSES_PER_ITERATION_LIMIT) {
     const account = this.getAccount({ id: accountId, type: this.mnemonicType })
 
     this._checkAccountExist(account)
 
-    if (!account.isReadOnly) {
-      this._checkPassword(password)
-    }
-
-    return this._generateAddresses(password, account, iteration, limit)
+    return this._generateAddresses(account.bip32XPublicKey, iteration, limit)
   }
 
   getMnemonic(password, accountId) {
@@ -241,7 +228,7 @@ class Keystore {
         readOnly: isReadOnly ? 'yes' : 'no',
         address: address || 'n/a',
         privateKey: decryptedPrivateKey || 'n/a',
-        mnemonic: decryptedMnemonic || 'n/a',
+        mnemonic: decryptedMnemonic ? decryptedMnemonic.trim() : 'n/a',
       }
     })
   }
@@ -253,27 +240,32 @@ class Keystore {
   }
 
   _createMnemonicAccount(props) {
-    const { id, password, mnemonic, accountName } = props
+    const { id, password, accountName } = props
+    const mnemonic = props.mnemonic.toLowerCase()
     const derivationPath = props.derivationPath || this.defaultDerivationPath
 
     if (!isMnemonicValid(mnemonic)) {
       throw (new Error('Invalid mnemonic'))
+    } else if (!this.constructor.isDerivationPathValid(derivationPath)) {
+      throw (new Error('Invalid derivation path'))
     }
 
-    const hdPath = this._getHdPath(mnemonic, derivationPath)
     const paddedMnemonic = utils.leftPadString(mnemonic, ' ', this.paddedMnemonicLength)
+    const encryptedMnemonic = this._encryptData(paddedMnemonic, password)
+    const bip32XPublicKey = this._getXPubFromMnemonic(password, encryptedMnemonic, derivationPath)
+
+    this._checkAccountUniqueness({ bip32XPublicKey }, 'xpub')
 
     this.accounts.push({
       type: this.mnemonicType,
       id,
       accountName,
       derivationPath,
+      bip32XPublicKey,
       isReadOnly: false,
-      address: null,
+      addressIndex: 0,
       encrypted: {
-        privateKey: null,
-        mnemonic: this._encryptData(paddedMnemonic, password),
-        hdPath: this._encryptData(hdPath, password),
+        mnemonic: encryptedMnemonic,
       },
     })
   }
@@ -285,25 +277,30 @@ class Keystore {
       throw (new Error('Invalid bip32XPublicKey'))
     }
 
+    this._checkAccountUniqueness({ bip32XPublicKey }, 'xpub')
+
     this.accounts.push({
       type: this.mnemonicType,
       id,
       accountName,
       bip32XPublicKey,
       isReadOnly: true,
-      address: null,
+      addressIndex: 0,
       encrypted: {},
     })
   }
 
   _createAddressAccount(props) {
-    const { id, password, privateKey, accountName } = props
+    const { id, password, accountName } = props
+    const privateKey = props.privateKey.toLowerCase()
 
     if (!utils.isHexStringValid(privateKey, PRIVATE_KEY_LENGTH)) {
       throw (new Error('Private Key is invalid'))
     }
 
     const address = utils.getAddressFromPrivateKey(privateKey)
+
+    this._checkAccountUniqueness({ address }, 'address')
 
     this.accounts.push({
       type: this.addressType,
@@ -318,11 +315,14 @@ class Keystore {
   }
 
   _createReadOnlyAddressAccount(props) {
-    const { id, address, accountName } = props
+    const { id, accountName } = props
+    const address = props.address.toLowerCase()
 
     if (!utils.isHexStringValid(address, ADDRESS_LENGTH)) {
       throw (new Error('Address is invalid'))
     }
+
+    this._checkAccountUniqueness({ address }, 'address')
 
     this.accounts.push({
       type: this.addressType,
@@ -335,10 +335,9 @@ class Keystore {
   }
 
   _getExtendedAccountInfo(accountName) {
-    return {
-      id: uuidv4(),
-      accountName: accountName || `Account ${this.accounts.length + 1}`,
-    }
+    const id = uuidv4()
+
+    return { id: uuidv4(), accountName: accountName || id }
   }
 
   _deriveKeyFromPassword(password) {
@@ -364,20 +363,26 @@ class Keystore {
     })
   }
 
-  _generateAddresses(password, account, iteration = 0, limit = 5) {
+  _getPrivateKeyFromMnemonic(password, account, addressIndex) {
+    const { encrypted, derivationPath } = account
+    const hdRoot = this._getPrivateHdRoot(password, encrypted.mnemonic, derivationPath)
+    const generatedKey = this._generateKey(hdRoot, addressIndex)
+
+    return generatedKey.privateKey.toString()
+  }
+
+  _generateAddresses(bip32XPublicKey, iteration, limit) {
     const keyIndexStart = iteration * limit
     const keyIndexEnd = keyIndexStart + limit
 
     const addresses = []
 
-    const hdRoot = this._getHdRoot(password, account)
+    const hdRoot = this._getPublicHdRoot(bip32XPublicKey)
 
     for (let index = keyIndexStart; index < keyIndexEnd; index += 1) {
-      const key = this._generateKey(hdRoot, index)
-
-      const address = account.isReadOnly
-        ? utils.getAddressFromPublicKey(key.publicKey.toString())
-        : utils.getAddressFromPrivateKey(key.privateKey.toString())
+      const generatedKey = this._generateKey(hdRoot, index)
+      const publicKey = generatedKey.publicKey.toString()
+      const address = utils.getAddressFromPublicKey(publicKey)
 
       addresses.push(address)
     }
@@ -396,12 +401,21 @@ class Keystore {
     return hdRootKey.derive(derivationPath).xprivkey
   }
 
-  _getHdRoot(password, account) {
-    const { bip32XPublicKey, encrypted, isReadOnly } = account
+  _getPublicHdRoot(bip32XPublicKey) {
+    return new bitcore.HDPublicKey(bip32XPublicKey)
+  }
 
-    return isReadOnly
-      ? new bitcore.HDPublicKey(bip32XPublicKey)
-      : new bitcore.HDPrivateKey(this._decryptData(encrypted.hdPath, password))
+  _getPrivateHdRoot(password, encryptedMnemonic, derivationPath) {
+    const mnemonic = this._decryptData(encryptedMnemonic, password)
+    const hdPath = this._getHdPath(mnemonic, derivationPath)
+
+    return new bitcore.HDPrivateKey(hdPath)
+  }
+
+  _getXPubFromMnemonic(password, encryptedMnemonic, derivationPath) {
+    const hdRoot = this._getPrivateHdRoot(password, encryptedMnemonic, derivationPath)
+
+    return hdRoot.hdPublicKey.toString()
   }
 
   _setAccount(account, props) {
@@ -416,6 +430,10 @@ class Keystore {
     this.accounts.splice(accountIndex, 1, newAccount)
 
     return newAccount
+  }
+
+  _getAccount(findProps) {
+    return find(this.accounts, findProps)
   }
 
   _getAccountIndex(accountId) {
@@ -498,6 +516,14 @@ class Keystore {
       }
     } catch (e) {
       throw (new Error(errMessage))
+    }
+  }
+
+  _checkAccountUniqueness(uniqueProperty, propertyName) {
+    const isAccountExist = !!this._getAccount(uniqueProperty)
+
+    if (isAccountExist) {
+      throw (new Error(`Account with this ${propertyName} already exists`))
     }
   }
 
