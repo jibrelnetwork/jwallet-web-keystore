@@ -2,6 +2,14 @@
 
 Library for ethereum blockchain accounts management.
 
+<p align="center">
+<a href="https://www.npmjs.com/package/jwallet-web-keystore"><img src="https://img.shields.io/npm/v/jwallet-web-keystore.svg?style=flat-square" alt="NPM version"></a>
+<a href="https://www.npmjs.com/package/jwallet-web-keystore"><img src="https://img.shields.io/npm/dt/jwallet-web-keystore.svg?style=flat-square" alt="NPM downloads"></a>
+<a href="https://www.npmjs.com/package/jwallet-web-keystore"><img src="https://img.shields.io/npm/l/jwallet-web-keystore.svg?style=flat-square" alt="MIT License"></a>
+<a href="https://www.npmjs.com/package/jwallet-web-keystore"><img src="https://img.shields.io/david/jibrelnetwork/jwallet-web-keystore.svg?style=flat-square" alt="Dependecies"></a>
+</p>
+
+
 ## About
 
 Keystore can hold `read only` / `full access` accounts of two types:
