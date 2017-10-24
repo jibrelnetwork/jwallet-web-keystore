@@ -179,7 +179,7 @@ Updated account.
 const updatedAccount = keystore.setAccountName('110ec58a-a0f2-4ac4-8393-c977d813b8d1', 'New account name')
 ```
 
-#### getPrivateKey(password, accountId)
+#### getPrivateKey(password, accountId, addressIndex)
 
 ##### Parameters
 
