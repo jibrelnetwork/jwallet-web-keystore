@@ -14,7 +14,7 @@ const ADDRESSES_PER_ITERATION_LIMIT = 5
 
 class Keystore {
   constructor(props = {}) {
-    this.accounts = props.accounts || []
+    this.accounts = []
     this.defaultDerivationPath = props.defaultDerivationPath || "m/44'/60'/0'/0"
     this.defaultEncryptionType = props.defaultEncryptionType || 'nacl.secretbox'
     this.paddedMnemonicLength = props.paddedMnemonicLength || 120

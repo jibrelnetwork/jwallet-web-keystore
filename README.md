@@ -39,17 +39,16 @@ const keystore = new Keystore(props)
 | accountName          | String  | Account name                                                      |
 | derivationPath       | String  | Derivation path for generating of addresses from mnemonic         |
 | isReadOnly           | Boolean | Read-only flag of account                                         |
-| address              | String  | Address of account (current address if type is `mnemonic`)        |
+| address              | String  | Address of account                                                |
+| addressIndex         | Number  | Current index of address of `mnemonic` account                    |
 | bip32XPublicKey      | String  | BIP32 Extended Public Key                                         |
 | encrypted            | Object  | Container of encrypted data                                       |
-| encrypted.privateKey | Object  | Encrypted private key (current private key if type is `mnemonic`) |
+| encrypted.privateKey | Object  | Encrypted private key                                             |
 | encrypted.mnemonic   | Object  | Encrypted mnemonic                                                |
-| encrypted.hdPath     | Object  | Encrypted HD private key parent                                   |
 
 **Notes:**
   * `isReadOnly` - flag means that account can be used only for balance / transactions checking
   * `bip32XPublicKey` - `xpub...` key that used for deriving of public keys (addresses)
-  * `encrypted.hdPath` - `xprv...` key that used for deriving of private keys
 
 ## Public API definitions
 
@@ -64,7 +63,6 @@ Instantiates `Keystore` object with provided `props`.
 | Param                          | Type   | Default                    | Description                   |
 | ------------------------------ | ------ | -------------------------- | ----------------------------- |
 | props                          | Object | {}                         | Constructor properties        |
-| props.accounts                 | Array  | []                         | Array of accounts             |
 | props.defaultDerivationPath    | String | "m/44'/60'/0'/0"           | Default derivation path for new `Mnemonic` accounts |
 | props.defaultEncryptionType    | String | 'nacl.secretbox'           | Default encryption type. Currently `nacl.secretbox` is only one supported |
 | props.paddedMnemonicLength     | Number | 120                        | Mnemonic will be padded left with this size before encryption |
@@ -185,10 +183,11 @@ const updatedAccount = keystore.setAccountName('110ec58a-a0f2-4ac4-8393-c977d813
 
 ##### Parameters
 
-| Param     | Type   | Description          |
-| --------- | ------ | -------------------- |
-| password  | String | Keystore password    |
-| accountId | String | Unique ID of account |
+| Param        | Type   | Description                                                          |
+| ------------ | ------ | -------------------------------------------------------------------- |
+| password     | String | Keystore password                                                    |
+| accountId    | String | Unique ID of account                                                 |
+| addressIndex | Number | Index of address (private key) to derive from `mnemonic` (default 0) |
 
 ##### Returns
 
@@ -198,30 +197,6 @@ Decrypted private key.
 
 ```javascript
 const privateKey = keystore.getPrivateKey('JHJ23jG^*DGHj667s', '110ec58a-a0f2-4ac4-8393-c977d813b8d1')
-```
-
-#### setAddress(password, accountId, addressIndex)
-
-**Note: used only for `mnemonic` accounts.**
-
-##### Parameters
-
-| Param        | Type   | Description                                                    |
-| ------------ | ------ | -------------------------------------------------------------- |
-| password     | String | Keystore password                                              |
-| accountId    | String | Unique ID of account                                           |
-| addressIndex | String | Index of address to derive from `mnemonic` / `bip32XPublicKey` |
-
-**Note: password is not required for read-only accounts**
-
-##### Returns
-
-Updated account.
-
-##### Example
-
-```javascript
-const updatedAccount = keystore.setAddress('JHJ23jG^*DGHj667s', '110ec58a-a0f2-4ac4-8393-c977d813b8d1', 5)
 ```
 
 #### setDerivationPath(password, accountId, newDerivationPath)
@@ -248,31 +223,6 @@ Updated account.
 const updatedAccount = keystore.setDerivationPath('JHJ23jG^*DGHj667s', '110ec58a-a0f2-4ac4-8393-c977d813b8d1', "m/44'/61'/0'/0")
 ```
 
-#### getAddressesFromMnemonic(password, accountId, iteration, limit)
-
-**Note: used only for `mnemonic` accounts.**
-
-##### Parameters
-
-| Param     | Type   | Description                                                              |
-| --------- | ------ | ------------------------------------------------------------------------ |
-| password  | String | Keystore password                                                        |
-| accountId | String | Unique ID of account                                                     |
-| iteration | Number | Iteration index (aka page for pagination) to generate bunch of addresses |
-| limit     | Number | Count of addresses to generate from mnemonic per one page / iteration    |
-
-**Note: password is not required for read-only accounts**
-
-##### Returns
-
-List of generated addresses.
-
-##### Example
-
-```javascript
-const addresses = keystore.getAddressesFromMnemonic('JHJ23jG^*DGHj667s', '110ec58a-a0f2-4ac4-8393-c977d813b8d1', 3, 10)
-```
-
 #### getMnemonic(password, accountId)
 
 **Note: used only for `mnemonic` accounts.**
@@ -292,6 +242,49 @@ Decrypted mnemonic.
 
 ```javascript
 const mnemonic = keystore.getMnemonic('JHJ23jG^*DGHj667s', '110ec58a-a0f2-4ac4-8393-c977d813b8d1')
+```
+
+#### getAddressesFromMnemonic(accountId, iteration, limit)
+
+**Note: used only for `mnemonic` accounts.**
+
+##### Parameters
+
+| Param     | Type   | Description                                                              |
+| --------- | ------ | ------------------------------------------------------------------------ |
+| accountId | String | Unique ID of account                                                     |
+| iteration | Number | Iteration index (aka page for pagination) to generate bunch of addresses |
+| limit     | Number | Count of addresses to generate from mnemonic per one page / iteration    |
+
+##### Returns
+
+List of generated addresses.
+
+##### Example
+
+```javascript
+const addresses = keystore.getAddressesFromMnemonic('110ec58a-a0f2-4ac4-8393-c977d813b8d1', 3, 10)
+```
+
+#### setAddressIndex(accountId, addressIndex)
+
+**Note: used only for `mnemonic` accounts.**
+
+##### Parameters
+
+| Param        | Type   | Description                                                    |
+| ------------ | ------ | -------------------------------------------------------------- |
+| accountId    | String | Unique ID of account                                           |
+| addressIndex | String | Index of address to derive from `mnemonic` / `bip32XPublicKey` |
+
+##### Returns
+
+Updated account.
+
+##### Example
+
+```javascript
+const updatedAccount = keystore.setAddress('110ec58a-a0f2-4ac4-8393-c977d813b8d1', 5)
 ```
 
 #### serialize()
@@ -360,6 +353,23 @@ keystore.setPassword('JHJ23jG^*DGHj667s', 'Tw5E^g7djfd(29j')
 
 ### Static methods
 
+#### generateMnemonic(entropy, randomBufferLength)
+
+| Param               | Type   | Description                                         |
+| ------------------- | ------ | --------------------------------------------------- |
+| entropy             | String | Entropy for mnemonic initialisation (see [new Mnemonic](https://bitcore.io/api/mnemonic#new_Mnemonic_new)) |
+| randomBufferLength  | Number | Buffer length (if `entropy` param is used) |
+
+##### Returns
+
+Mnemonic - 12 English words splited by space.
+
+##### Example
+
+```javascript
+const mnemonic = Keystore.generateMnemonic()
+```
+
 #### isMnemonicValid(mnemonic)
 
 ##### Parameters
@@ -379,21 +389,20 @@ const mnemonic = 'come average primary sunny profit eager toy pulp struggle haza
 const isValid = Keystore.isMnemonicValid(mnemonic) // true
 ```
 
-#### generateMnemonic(entropy, randomBufferLength)
+#### isBip32XPublicKeyValid(bip32XPublicKey)
 
-| Param               | Type   | Description                                         |
-| ------------------- | ------ | --------------------------------------------------- |
-| entropy             | String | Entropy for mnemonic initialisation (see [new Mnemonic](https://bitcore.io/api/mnemonic#new_Mnemonic_new)) |
-| randomBufferLength  | Number | Buffer length (if `entropy` param is used) |
+| Param           | Type   | Description               |
+| --------------- | ------ | ------------------------- |
+| bip32XPublicKey | String | BIP32 Extended Public Key |
 
 ##### Returns
 
-Mnemonic - 12 English words splited by space.
+`true` if bip32XPublicKey is valid and `false` otherwise.
 
 ##### Example
 
 ```javascript
-const mnemonic = Keystore.generateMnemonic()
+const isValid = Keystore.isBip32XPublicKeyValid('xpub...')
 ```
 
 #### isHexStringValid(hex, hexLength)
@@ -411,6 +420,22 @@ const mnemonic = Keystore.generateMnemonic()
 
 ```javascript
 const isValid = Keystore.isHexStringValid('0x8a02a99ee7a801da6996a2dacc406ffa5190dc9c', 40)
+```
+
+#### isDerivationPathValid(derivationPath)
+
+| Param          | Type   | Description     |
+| -------------- | ------ | --------------- |
+| derivationPath | String | Derivation path |
+
+##### Returns
+
+`true` if derivationPath is valid and `false` otherwise.
+
+##### Example
+
+```javascript
+const isValid = Keystore.isDerivationPathValid("m/44'/60'/0'/0")
 ```
 
 #### testPassword(password, passwordConfig)
