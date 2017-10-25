@@ -115,7 +115,7 @@ class Keystore {
 
     this._checkAccountExist(account)
 
-    if (account.name === accountName) {
+    if (account.accountName === accountName) {
       return account
     }
 

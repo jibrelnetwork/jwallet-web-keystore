@@ -5,6 +5,7 @@ const keystore = new Keystore()
 const password = 'JHJ23jG^*DGHj667s'
 const newPassword = 'Tw5E^g7djfd(29j'
 const accountName = 'address account'
+const anotherAccountName = 'another address account'
 const updatedAccountName = 'updated address account'
 const accountIdLength = 36
 const addressLength = 42
@@ -113,9 +114,25 @@ describe('address account', function() {
     }
   })
 
+  it('setAccountName() should return unchanged account if accountName is the same', function(done) {
+    const sameAccount = keystore.setAccountName(accountId, accountName)
+
+    sameAccount.id.should.be.equal(accountId)
+    sameAccount.accountName.should.be.equal(accountName)
+
+    done()
+  })
+
   it('setAccountName() should throw error (account with this name exists)', function(done) {
+    const anotherAccountId = keystore.createAccount({
+      password,
+      accountName: anotherAccountName,
+      type: 'address',
+      privateKey: `0x${'1'.repeat(64)}`,
+    })
+
     try {
-      keystore.setAccountName(accountId, accountName)
+      keystore.setAccountName(accountId, anotherAccountName)
 
       done(new Error('Exception not thrown'))
     } catch (e) {
@@ -164,7 +181,7 @@ describe('address account', function() {
     const decryptedAccounts = keystore.getDecryptedAccounts(newPassword)
 
     decryptedAccounts.should.be.an.Array()
-    decryptedAccounts.length.should.be.equal(1)
+    decryptedAccounts.length.should.be.equal(2)
     decryptedAccounts[0].accountName.should.be.equal(updatedAccountName)
     decryptedAccounts[0].privateKey.should.be.equal(privateKeyAddressPair.privateKey)
 
