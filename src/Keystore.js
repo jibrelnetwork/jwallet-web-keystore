@@ -500,6 +500,10 @@ class Keystore {
   }
 
   _checkPassword(password) {
+    if (!(password && password.length)) {
+      throw (new Error('Password is empty'))
+    }
+
     if (!this.checkPasswordData) {
       this._setPasswordDataToCheck(password)
 

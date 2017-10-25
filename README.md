@@ -9,7 +9,6 @@ Library for ethereum blockchain accounts management.
 <a href="https://www.npmjs.com/package/jwallet-web-keystore"><img src="https://img.shields.io/david/jibrelnetwork/jwallet-web-keystore.svg?style=flat-square" alt="Dependecies"></a>
 </p>
 
-
 ## About
 
 Keystore can hold `read only` / `full access` accounts of two types:
