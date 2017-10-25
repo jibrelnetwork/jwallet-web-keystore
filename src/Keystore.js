@@ -114,6 +114,11 @@ class Keystore {
     const account = this.getAccount({ id: accountId })
 
     this._checkAccountExist(account)
+
+    if (account.name === accountName) {
+      return account
+    }
+
     this._checkAccountUniqueness({ accountName }, 'name')
 
     if (!(accountName && accountName.length)) {
