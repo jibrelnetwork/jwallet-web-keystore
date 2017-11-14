@@ -1,4 +1,7 @@
 const should = require('should')
+
+const packageData = require('../package.json')
+
 const Keystore = require('../index')
 const keystore = new Keystore()
 
@@ -6,7 +9,7 @@ const password = 'JHJ23jG^*DGHj667s'
 const bip32XPublicKey = 'xpub6DZVENYSZsMW1D48vLG924qPaxz83TZc43tK7zMbCdFcv1La9pqe6pBiuxdzDNjufXRW42CfJEK8indRdhfDoWvYfZDZS1xjkZrQB5iYtHy'
 const accountName = 'mnemonic read only account'
 const accountIdLength = 36
-const currentKeystoreVersion = 1
+const currentKeystoreVersion = packageData.version
 
 let accountId
 let serializedKeystoreData

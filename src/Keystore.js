@@ -8,6 +8,8 @@ const encryption = require('./encryption')
 const testPassword = require('./password')
 const { generateMnemonic, isMnemonicValid, isBip32XPublicKeyValid } = require('./mnemonic')
 
+const packageData = require('../package.json')
+
 const ADDRESS_LENGTH = 40
 const PRIVATE_KEY_LENGTH = 64
 const ADDRESSES_PER_ITERATION_LIMIT = 5
@@ -26,7 +28,7 @@ class Keystore {
     this.addressType = 'address'
     this.checkPasswordData = null
     this.salt = utils.generateSalt(this.saltByteCount)
-    this.version = 1
+    this.version = packageData.version
   }
 
   static generateMnemonic(entropy, randomBufferLength = 32) {
@@ -477,7 +479,7 @@ class Keystore {
   }
 
   _restoreBackupData(backupData) {
-    if (backupData.version === 1) {
+    if (backupData.version <= packageData.version) {
       const {
         accounts,
         defaultDerivationPath,
@@ -495,7 +497,7 @@ class Keystore {
       this.derivedKeyLength = derivedKeyLength || this.derivedKeyLength
       this.checkPasswordData = checkPasswordData || this.checkPasswordData
       this.salt = salt || this.salt
-      this.version = 1
+      this.version = packageData.version
     }
   }
 
