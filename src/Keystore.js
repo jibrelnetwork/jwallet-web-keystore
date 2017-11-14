@@ -74,11 +74,18 @@ class Keystore {
 
     this.accounts.splice(accountIndex, 1)
 
+    if (!this.accounts.length) {
+      this._removePasswordDataToCheck()
+    }
+
     return true
   }
 
-  removeAccounts() {
+  removeAccounts(password) {
+    this._checkPassword(password)
+
     this.accounts = []
+    this._removePasswordDataToCheck()
   }
 
   createAccount(props) {
@@ -546,6 +553,10 @@ class Keystore {
     const checkPasswordData = utils.generateSalt(this.saltByteCount)
 
     this.checkPasswordData = this._encryptData(checkPasswordData, password)
+  }
+
+  _removePasswordDataToCheck() {
+    this.checkPasswordData = null
   }
 
   _reEncryptData(password, newPassword) {

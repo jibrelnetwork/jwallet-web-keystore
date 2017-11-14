@@ -159,12 +159,18 @@ const accountId = keystore.createAccount({
 const result = keystore.removeAccount('110ec58a-a0f2-4ac4-8393-c977d813b8d1') // true
 ```
 
-#### removeAccounts()
+#### removeAccounts(password)
+
+##### Parameters
+
+| Param     | Type   | Description       |
+| --------- | ------ | ----------------- |
+| password  | String | Keystore password |
 
 ##### Example
 
 ```javascript
-keystore.removeAccounts() // all keystore accounts were removed
+keystore.removeAccounts('JHJ23jG^*DGHj667s') // all keystore accounts were removed
 ```
 
 #### setAccountName(accountId, newName)
