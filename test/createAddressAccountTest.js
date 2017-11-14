@@ -33,7 +33,7 @@ describe('address account', function() {
       done(new Error('Exception not thrown'))
     } catch (e) {
       e.should.be.an.Object()
-      e.message.should.be.equal('Password is too weak')
+      e.message.should.be.equal('The password must contain at least one uppercase letter')
 
       done()
     }
@@ -189,7 +189,7 @@ describe('address account', function() {
   })
 
   it('removeAccounts() should remove all accounts', function(done) {
-    keystore.removeAccounts()
+    keystore.removeAccounts(newPassword)
 
     const accounts = keystore.getAccounts()
 

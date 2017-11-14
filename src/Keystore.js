@@ -547,7 +547,7 @@ class Keystore {
     const testPasswordResult = testPassword(password, this.passwordConfig)
 
     if (testPasswordResult.failedTests.length) {
-      throw (new Error('Password is too weak'))
+      throw (new Error(testPasswordResult.errors[0]))
     }
 
     const checkPasswordData = utils.generateSalt(this.saltByteCount)
