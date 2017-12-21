@@ -418,21 +418,37 @@ const isValid = Keystore.isMnemonicValid(mnemonic) // true
 const isValid = Keystore.isBip32XPublicKeyValid('xpub...')
 ```
 
-#### isHexStringValid(hex, hexLength)
+#### isValidAddress(address)
 
-| Param     | Type   | Description                                                   |
-| --------- | ------ | ------------------------------------------------------------- |
-| hex       | String | Hexadecimal string to check                                   |
-| hexLength | Number | Hex length (should be equal `hex.length` without `0x` prefix) |
+| Param     | Type   | Description                                         |
+| --------- | ------ | --------------------------------------------------- |
+| address   | String | Address to check. Accepts checksummed addresses too |
 
 ##### Returns
 
-`true` if hex is valid and `false` otherwise.
+`true` if address is valid and `false` otherwise.
 
 ##### Example
 
 ```javascript
-const isValid = Keystore.isHexStringValid('0x8a02a99ee7a801da6996a2dacc406ffa5190dc9c', 40)
+const isValid = Keystore.isValidAddress('0x8a02a99ee7a801da6996a2dacc406ffa5190dc9c')
+```
+
+#### isValidPrivateKey(privateKey)
+
+| Param      | Type   | Description          |
+| ---------- | ------ | -------------------- |
+| privateKey | String | Private Key to check |
+
+##### Returns
+
+`true` if privateKey is valid and `false` otherwise.
+
+##### Example
+
+```javascript
+const pk = '0xa7fcb4efc392d2c8983cbfe64063f994f85120e60843407af95907d905d0dc9f'
+const isValid = Keystore.isValidPrivateKey(pk)
 ```
 
 #### isDerivationPathValid(derivationPath)
