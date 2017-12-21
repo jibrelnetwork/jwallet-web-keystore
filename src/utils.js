@@ -4,17 +4,34 @@ const EC = require('elliptic').ec
 const { Random } = require('bitcore-lib').crypto
 
 const ec = new EC('secp256k1')
+const HEX_PREFIX = /^0x/i
 
-function isHexStringValid(hex, length) {
-  const requiredLengthWithPrefix = length + '0x'.length
+function isValidAddress(address) {
+  return isNormalizedAddress(address) || isValidChecksumAddress(address)
+}
 
-  if (hex.length !== requiredLengthWithPrefix) {
-    return false
-  }
+function isNormalizedAddress(address) {
+  return (/^0x[0-9a-f]{40}$/.test(address) || /^0x[0-9A-F]{40}$/.test(address))
+}
 
-  const hexRe = new RegExp(`^(0x)([A-F\\d]{${length}})$`, 'i')
+function isValidChecksumAddress(address) {
+  return (/^0x[0-9a-fA-F]{40}$/i.test(address) && getChecksum(address) === address)
+}
 
-  return hexRe.test(hex)
+function getChecksum(address) {
+  const addressLowerCase = strip0x(address).toLowerCase()
+  const hash = cryptoJS.SHA3(addressLowerCase, { outputLength: 256 }).toString(cryptoJS.enc.Hex)
+
+  const checksum = addressLowerCase
+    .split('')
+    .map((symbol, index) => ((parseInt(hash[index], 16) >= 8) ? symbol.toUpperCase() : symbol))
+    .join('')
+
+  return add0x(checksum)
+}
+
+function isValidPrivateKey(privateKey) {
+  return (/^0x[0-9a-fA-F]{64}$/i.test(privateKey))
 }
 
 function getAddressFromPublicKey(publicKey) {
@@ -24,10 +41,8 @@ function getAddressFromPublicKey(publicKey) {
 }
 
 function getAddressFromPrivateKey(privateKey) {
-  const privateKeyWithoutHexPrefix = privateKey.replace(/^0x/i, '')
-
   const keyPair = ec.genKeyPair()
-  keyPair._importPrivate(privateKeyWithoutHexPrefix, 'hex')
+  keyPair._importPrivate(strip0x(privateKey), 'hex')
 
   return getAddressFromKeyPair(keyPair)
 }
@@ -65,8 +80,12 @@ function generateSalt(byteCount) {
   return Random.getRandomBuffer(byteCount).toString('base64')
 }
 
+function strip0x(data) {
+  return data.replace(HEX_PREFIX, '')
+}
+
 function add0x(data) {
-  if (data.indexOf('0x') === 0) {
+  if (HEX_PREFIX.test(data)) {
     return data
   }
 
@@ -74,7 +93,8 @@ function add0x(data) {
 }
 
 module.exports = {
-  isHexStringValid,
+  isValidAddress,
+  isValidPrivateKey,
   getAddressFromPublicKey,
   getAddressFromPrivateKey,
   deriveKeyFromPassword,

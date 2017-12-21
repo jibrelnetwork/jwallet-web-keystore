@@ -19,11 +19,7 @@ function isMnemonicValid(mnemonic) {
 }
 
 function isBip32XPublicKeyValid(bip32XPublicKey) {
-  if (!bip32XPublicKey) {
-    return false
-  }
-
-  if (bip32XPublicKey.length !== BIP32_EXTENDABLE_PUBLIC_KEY_LENGTH) {
+  if (!bip32XPublicKey || (bip32XPublicKey.length !== BIP32_EXTENDABLE_PUBLIC_KEY_LENGTH)) {
     return false
   }
 

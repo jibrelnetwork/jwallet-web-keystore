@@ -7,14 +7,17 @@ const invalidMnemonic = `${validMnemonic} some other words`
 const mnemonicEntropy = 'some custom entropy'
 const mnemonicBufferLength = 64
 
-const validPrivateKey = `0x${'1'.repeat(64)}`
-const invalidPrivateKey = `${validPrivateKey}%`
+const validPrivateKey = '0xa7fcb4efc392d2c8983cbfe64063f994f85120e60843407af95907d905d0dc9f'
+const invalidPrivateKey1 = validPrivateKey.slice(0, -1)
+const invalidPrivateKey2 = `${validPrivateKey}%`
+
+const validAddress = '0xb5C99109DEd6212F667b9467a42DAD1F195cDBa9'
+const invalidChecksumAddress = '0xb5C99109DEd6212F667b9467a42DAD1F195cdba9'
+const invalidAddress1 = validAddress.slice(0, -1)
+const invalidAddress2 = `${validAddress}a`
 
 const validBip32XPubKey = `xpub${'1'.repeat(107)}`
 const invalidBip32XPubKey = `${validBip32XPubKey}%`
-
-const validPrivateKeyLength = 64
-const invalidPrivateKeyLength = 65
 
 const validDerivationPath = "m/44'/60'/0'"
 const invalidDerivationPath = 'qwert'
@@ -80,16 +83,43 @@ describe('isBip32XPublicKeyValid', function() {
   })
 })
 
-describe('isHexStringValid', function() {
+describe('isValidAddress', function() {
+  it('should return true when address is correct', function(done) {
+    const isAddressValid1 = Keystore.isValidAddress(validAddress)
+    const isAddressValid2 = Keystore.isValidAddress(invalidChecksumAddress)
+    const isAddressValid3 = Keystore.isValidAddress(invalidAddress1)
+    const isAddressValid4 = Keystore.isValidAddress(invalidAddress2)
+
+    isAddressValid1.should.be.a.Boolean()
+    isAddressValid1.should.be.equal(true)
+
+    isAddressValid2.should.be.a.Boolean()
+    isAddressValid2.should.be.equal(false)
+
+    isAddressValid3.should.be.a.Boolean()
+    isAddressValid3.should.be.equal(false)
+
+    isAddressValid4.should.be.a.Boolean()
+    isAddressValid4.should.be.equal(false)
+
+    done()
+  })
+})
+
+describe('isValidPrivateKey', function() {
   it('should return true when private key is correct', function(done) {
-    const isPrivateKeyValid1 = Keystore.isHexStringValid(validPrivateKey, validPrivateKeyLength)
-    const isPrivateKeyValid2 = Keystore.isHexStringValid(invalidPrivateKey, invalidPrivateKeyLength)
+    const isPrivateKeyValid1 = Keystore.isValidPrivateKey(validPrivateKey)
+    const isPrivateKeyValid2 = Keystore.isValidPrivateKey(invalidPrivateKey1)
+    const isPrivateKeyValid3 = Keystore.isValidPrivateKey(invalidPrivateKey2)
 
     isPrivateKeyValid1.should.be.a.Boolean()
     isPrivateKeyValid1.should.be.equal(true)
 
     isPrivateKeyValid2.should.be.a.Boolean()
     isPrivateKeyValid2.should.be.equal(false)
+
+    isPrivateKeyValid3.should.be.a.Boolean()
+    isPrivateKeyValid3.should.be.equal(false)
 
     done()
   })

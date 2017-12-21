@@ -13,7 +13,7 @@ const privateKeyLength = 66
 
 const privateKeyAddressPair = {
   privateKey: '0xa7fcb4efc392d2c8983cbfe64063f994f85120e60843407af95907d905d0dc9f',
-  address: '0xb5c99109ded6212f667b9467a42dad1f195cdba9',
+  address: '0xb5C99109DEd6212F667b9467a42DAD1F195cDBa9',
 }
 
 let accountId

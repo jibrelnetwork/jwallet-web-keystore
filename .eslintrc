@@ -18,10 +18,6 @@
       "error",
       "never"
     ],
-    "arrow-body-style": [
-      "error",
-      "always"
-    ],
     "arrow-parens": [
       "error",
       "as-needed",
@@ -74,6 +70,7 @@
     "class-methods-use-this": "off",
     "require-yield": "warn",
     "no-underscore-dangle": "off",
-    "no-use-before-define": "off"
+    "no-use-before-define": "off",
+    "arrow-body-style": "off"
   }
 }

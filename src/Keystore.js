@@ -10,8 +10,6 @@ const { generateMnemonic, isMnemonicValid, isBip32XPublicKeyValid } = require('.
 
 const packageData = require('../package.json')
 
-const ADDRESS_LENGTH = 40
-const PRIVATE_KEY_LENGTH = 64
 const ADDRESSES_PER_ITERATION_LIMIT = 5
 
 class Keystore {
@@ -43,8 +41,12 @@ class Keystore {
     return isBip32XPublicKeyValid(bip32XPublicKey)
   }
 
-  static isHexStringValid(hash, hashLength) {
-    return utils.isHexStringValid(hash, hashLength)
+  static isValidAddress(address) {
+    return utils.isValidAddress(address)
+  }
+
+  static isValidPrivateKey(privateKey) {
+    return utils.isValidPrivateKey(privateKey)
   }
 
   static isDerivationPathValid(derivationPath) {
@@ -305,21 +307,21 @@ class Keystore {
   }
 
   _createAddressAccount(props) {
-    const { id, password, accountName } = props
-    const privateKey = props.privateKey.toLowerCase()
+    const { id, password, accountName, privateKey } = props
 
-    if (!utils.isHexStringValid(privateKey, PRIVATE_KEY_LENGTH)) {
+    if (!utils.isValidPrivateKey(privateKey)) {
       throw (new Error('Private Key is invalid'))
     }
 
     const address = utils.getAddressFromPrivateKey(privateKey)
-
-    this._checkAccountUniqueness({ address }, 'address')
+    const addressLowerCase = address.toLowerCase()
+    this._checkAccountUniqueness({ addressLowerCase }, 'address')
 
     this.accounts.push({
       type: this.addressType,
       id,
       address,
+      addressLowerCase,
       accountName,
       isReadOnly: false,
       encrypted: {
@@ -329,19 +331,20 @@ class Keystore {
   }
 
   _createReadOnlyAddressAccount(props) {
-    const { id, accountName } = props
-    const address = props.address.toLowerCase()
+    const { id, accountName, address } = props
 
-    if (!utils.isHexStringValid(address, ADDRESS_LENGTH)) {
+    if (!utils.isValidAddress(address)) {
       throw (new Error('Address is invalid'))
     }
 
-    this._checkAccountUniqueness({ address }, 'address')
+    const addressLowerCase = address.toLowerCase()
+    this._checkAccountUniqueness({ addressLowerCase }, 'address')
 
     this.accounts.push({
       type: this.addressType,
       id,
       address,
+      addressLowerCase,
       accountName,
       isReadOnly: true,
       encrypted: {},
