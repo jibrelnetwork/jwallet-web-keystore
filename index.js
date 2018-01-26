@@ -1,3 +1,3 @@
-const Keystore = require('./src')
+const Keystore = require('./lib')
 
 module.exports = Keystore
