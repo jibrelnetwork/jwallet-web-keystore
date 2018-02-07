@@ -73,6 +73,15 @@ describe('mnemonic read only account', function() {
     done()
   })
 
+  it('getAddressFromMnemonic() should derive address by index from mnemonic', function(done) {
+    const address = keystore.getAddressFromMnemonic(accountId, 0)
+
+    address.should.be.a.String()
+    address.length.should.be.equal(addressLength)
+
+    done()
+  })
+
   it('setAddressIndex() should set current address index', function(done) {
     const addressIndex = 3
     const account = keystore.setAddressIndex(accountId, addressIndex)
