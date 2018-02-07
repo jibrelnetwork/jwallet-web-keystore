@@ -4,6 +4,7 @@ const keystore = new Keystore()
 
 const password = 'JHJ23jG^*DGHj667s'
 const newPassword = 'Tw5E^g7djfd(29j'
+const invalidPassword = 'wrOng pa$$w0rd'
 const accountName = 'address account'
 const anotherAccountName = 'another address account'
 const updatedAccountName = 'updated address account'
@@ -188,13 +189,49 @@ describe('address account', function() {
     done()
   })
 
-  it('removeAccounts() should remove all accounts', function(done) {
+  it('removeAccounts() should throw error (incorrect password)', function(done) {
+    try {
+      keystore.removeAccounts(invalidPassword)
+
+      done(new Error('Exception not thrown'))
+    } catch (e) {
+      e.should.be.an.Object()
+      e.message.should.be.equal('Password is incorrect')
+
+      done()
+    }
+  })
+
+  it('removeAccounts() should remove all accounts (with password param)', function(done) {
     keystore.removeAccounts(newPassword)
 
     const accounts = keystore.getAccounts()
 
     accounts.should.be.an.Array()
     accounts.length.should.be.equal(0)
+
+    done()
+  })
+
+  it('removeAccounts() should remove all accounts (without params)', function(done) {
+    keystore.createAccount({
+      password,
+      accountName,
+      type: 'address',
+      privateKey: privateKeyAddressPair.privateKey,
+    })
+
+    const accountsBeforeRemove = keystore.getAccounts()
+
+    accountsBeforeRemove.should.be.an.Array()
+    accountsBeforeRemove.length.should.be.equal(1)
+
+    keystore.removeAccounts()
+
+    const accountsAfterRemove = keystore.getAccounts()
+
+    accountsAfterRemove.should.be.an.Array()
+    accountsAfterRemove.length.should.be.equal(0)
 
     done()
   })
