@@ -86,7 +86,9 @@ class Keystore {
   }
 
   removeAccounts(password) {
-    this._checkPassword(password)
+    if (password) {
+      this._checkPassword(password)
+    }
 
     this.accounts = []
     this._removePasswordDataToCheck()
