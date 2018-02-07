@@ -281,6 +281,27 @@ List of generated addresses.
 const addresses = keystore.getAddressesFromMnemonic('110ec58a-a0f2-4ac4-8393-c977d813b8d1', 3, 10)
 ```
 
+#### getAddressFromMnemonic(accountId, addressIndex)
+
+**Note: used only for `mnemonic` accounts.**
+
+##### Parameters
+
+| Param        | Type   | Description                                                    |
+| ------------ | ------ | -------------------------------------------------------------- |
+| accountId    | String | Unique ID of account                                           |
+| addressIndex | String | Index of address to derive from `mnemonic` / `bip32XPublicKey` |
+
+##### Returns
+
+Derived by index address.
+
+##### Example
+
+```javascript
+const address = keystore.getAddressFromMnemonic('110ec58a-a0f2-4ac4-8393-c977d813b8d1', 5)
+```
+
 #### setAddressIndex(accountId, addressIndex)
 
 **Note: used only for `mnemonic` accounts.**
