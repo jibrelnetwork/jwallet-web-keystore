@@ -200,6 +200,14 @@ class Keystore {
     return this._generateAddresses(account.bip32XPublicKey, iteration, limit)
   }
 
+  getAddressFromMnemonic(accountId, addressIndex = 0) {
+    const account = this.getAccount({ id: accountId, type: this.mnemonicType })
+
+    this._checkAccountExist(account)
+
+    return this._generateAddresses(account.bip32XPublicKey, addressIndex, 1).shift()
+  }
+
   getMnemonic(password, accountId) {
     const account = this.getAccount({ id: accountId, type: this.mnemonicType })
 
