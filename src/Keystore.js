@@ -1,6 +1,7 @@
 const uuidv4 = require('uuid/v4')
 const bitcore = require('bitcore-lib')
 const Mnemonic = require('bitcore-mnemonic')
+const { clone } = require('ramda')
 const { find, findIndex } = require('lodash')
 
 const utils = require('./utils')
@@ -14,7 +15,7 @@ const ADDRESSES_PER_ITERATION_LIMIT = 5
 
 class Keystore {
   constructor(props = {}) {
-    this.accounts = []
+    this.wallets = []
     this.defaultDerivationPath = props.defaultDerivationPath || "m/44'/60'/0'/0"
     this.defaultEncryptionType = props.defaultEncryptionType || 'nacl.secretbox'
     this.paddedMnemonicLength = props.paddedMnemonicLength || 120
@@ -57,165 +58,165 @@ class Keystore {
     return testPassword(password, passwordConfig)
   }
 
-  getAccounts() {
-    return this.accounts
+  getWallets() {
+    return clone(this.wallets)
   }
 
-  getAccount(findProps) {
+  getWallet(findProps) {
     if (!(findProps && findProps.id)) {
-      throw (new Error('Account ID not provided'))
+      throw new Error('Wallet ID not provided')
     }
 
-    return this._getAccount(findProps)
+    return this._getWallet(findProps)
   }
 
-  removeAccount(accountId) {
-    const accountIndex = this._getAccountIndex(accountId)
+  removeWallet(walletId) {
+    const walletIndex = this._getWalletIndex(walletId)
 
-    if (accountIndex === -1) {
+    if (walletIndex === -1) {
       return false
     }
 
-    this.accounts.splice(accountIndex, 1)
+    this.wallets.splice(walletIndex, 1)
 
-    if (!this.accounts.length) {
+    if (!this.wallets.length) {
       this._removePasswordDataToCheck()
     }
 
     return true
   }
 
-  removeAccounts(password) {
+  removeWallets(password) {
     if (password) {
       this._checkPassword(password)
     }
 
-    this.accounts = []
+    this.wallets = []
     this._removePasswordDataToCheck()
   }
 
-  createAccount(props) {
-    const { type, isReadOnly, password, accountName, ...otherProps } = props
+  createWallet(props) {
+    const { type, isReadOnly, password, walletName, ...otherProps } = props
 
-    this._checkAccountUniqueness({ accountName }, 'name')
+    this._checkWalletUniqueness({ walletName }, 'name')
 
-    const extendedAccountInfo = this._getExtendedAccountInfo(accountName)
-    const accountData = { ...otherProps, ...extendedAccountInfo, password }
+    const extendedWalletInfo = this._getExtendedWalletInfo(walletName)
+    const walletData = { ...otherProps, ...extendedWalletInfo, password }
 
     this._checkPassword(password)
 
-    let createAccountHandler
+    let createWalletHandler
 
     if (type === this.mnemonicType) {
-      createAccountHandler = isReadOnly
-        ? this._createReadOnlyMnemonicAccount
-        : this._createMnemonicAccount
+      createWalletHandler = isReadOnly
+        ? this._createReadOnlyMnemonicWallet
+        : this._createMnemonicWallet
     } else if (type === this.addressType) {
-      createAccountHandler = isReadOnly
-        ? this._createReadOnlyAddressAccount
-        : this._createAddressAccount
+      createWalletHandler = isReadOnly
+        ? this._createReadOnlyAddressWallet
+        : this._createAddressWallet
     } else {
-      throw (new Error('Type of account not provided or incorrect'))
+      throw new Error('Type of wallet not provided or incorrect')
     }
 
-    createAccountHandler.call(this, accountData)
+    createWalletHandler.call(this, walletData)
 
-    return accountData.id
+    return walletData.id
   }
 
-  setAccountName(accountId, accountName) {
-    const account = this.getAccount({ id: accountId })
+  setWalletName(walletId, walletName) {
+    const wallet = this.getWallet({ id: walletId })
 
-    this._checkAccountExist(account)
+    this._checkWalletExist(wallet)
 
-    if (account.accountName === accountName) {
-      return account
+    if (wallet.walletName === walletName) {
+      return wallet
     }
 
-    this._checkAccountUniqueness({ accountName }, 'name')
+    this._checkWalletUniqueness({ walletName }, 'name')
 
-    if (!(accountName && accountName.length)) {
-      throw (new Error('New account name should be not empty'))
+    if (!(walletName && walletName.length)) {
+      throw new Error('New wallet name should be not empty')
     }
 
-    return this._setAccount(account, { accountName })
+    return this._setWallet(wallet, { walletName })
   }
 
-  getPrivateKey(password, accountId, addressIndex = 0) {
-    const account = this.getAccount({ id: accountId })
+  getPrivateKey(password, walletId, addressIndex = 0) {
+    const wallet = this.getWallet({ id: walletId })
 
-    this._checkAccountExist(account)
-    this._checkReadOnly(account)
+    this._checkWalletExist(wallet)
+    this._checkReadOnly(wallet)
     this._checkPassword(password)
 
-    const { type, encrypted } = account
+    const { type, encrypted } = wallet
 
     const privateKey = (type === 'address')
       ? this._decryptData(encrypted.privateKey, password, true)
-      : this._getPrivateKeyFromMnemonic(password, account, addressIndex)
+      : this._getPrivateKeyFromMnemonic(password, wallet, addressIndex)
 
     return utils.add0x(privateKey)
   }
 
-  setAddressIndex(accountId, addressIndex = 0) {
-    const account = this.getAccount({ id: accountId, type: this.mnemonicType })
+  setAddressIndex(walletId, addressIndex = 0) {
+    const wallet = this.getWallet({ id: walletId, type: this.mnemonicType })
 
-    this._checkAccountExist(account)
+    this._checkWalletExist(wallet)
 
-    return this._setAccount(account, { addressIndex })
+    return this._setWallet(wallet, { addressIndex })
   }
 
-  setDerivationPath(password, accountId, newDerivationPath) {
-    const account = this.getAccount({ id: accountId, type: this.mnemonicType })
+  setDerivationPath(password, walletId, newDerivationPath) {
+    const wallet = this.getWallet({ id: walletId, type: this.mnemonicType })
 
-    this._checkAccountExist(account)
-    this._checkReadOnly(account)
+    this._checkWalletExist(wallet)
+    this._checkReadOnly(wallet)
     this._checkPassword(password)
 
     if (!this.constructor.isDerivationPathValid(newDerivationPath)) {
-      throw (new Error('Invalid derivation path'))
+      throw new Error('Invalid derivation path')
     }
 
-    const { encrypted, derivationPath } = account
+    const { encrypted, derivationPath } = wallet
 
     if (newDerivationPath === derivationPath) {
-      throw (new Error('Can not set the same derivation path'))
+      throw new Error('Can not set the same derivation path')
     }
 
     const xpub = this._getXPubFromMnemonic(password, encrypted.mnemonic, newDerivationPath)
 
-    this._checkAccountUniqueness({ bip32XPublicKey: xpub }, 'xpub')
+    this._checkWalletUniqueness({ bip32XPublicKey: xpub }, 'xpub')
 
-    return this._setAccount(account, {
+    return this._setWallet(wallet, {
       derivationPath: newDerivationPath,
       bip32XPublicKey: xpub,
     })
   }
 
-  getAddressesFromMnemonic(accountId, iteration = 0, limit = ADDRESSES_PER_ITERATION_LIMIT) {
-    const account = this.getAccount({ id: accountId, type: this.mnemonicType })
+  getAddressesFromMnemonic(walletId, iteration = 0, limit = ADDRESSES_PER_ITERATION_LIMIT) {
+    const wallet = this.getWallet({ id: walletId, type: this.mnemonicType })
 
-    this._checkAccountExist(account)
+    this._checkWalletExist(wallet)
 
-    return this._generateAddresses(account.bip32XPublicKey, iteration, limit)
+    return this._generateAddresses(wallet.bip32XPublicKey, iteration, limit)
   }
 
-  getAddressFromMnemonic(accountId, addressIndex = 0) {
-    const account = this.getAccount({ id: accountId, type: this.mnemonicType })
+  getAddressFromMnemonic(walletId, addressIndex = 0) {
+    const wallet = this.getWallet({ id: walletId, type: this.mnemonicType })
 
-    this._checkAccountExist(account)
+    this._checkWalletExist(wallet)
 
-    return this._generateAddresses(account.bip32XPublicKey, addressIndex, 1).shift()
+    return this._generateAddresses(wallet.bip32XPublicKey, addressIndex, 1).shift()
   }
 
-  getMnemonic(password, accountId) {
-    const account = this.getAccount({ id: accountId, type: this.mnemonicType })
+  getMnemonic(password, walletId) {
+    const wallet = this.getWallet({ id: walletId, type: this.mnemonicType })
 
-    this._checkAccountExist(account)
-    this._checkReadOnly(account)
+    this._checkWalletExist(wallet)
+    this._checkReadOnly(wallet)
     this._checkPassword(password)
 
-    const paddedMnemonic = this._decryptData(account.encrypted.mnemonic, password)
+    const paddedMnemonic = this._decryptData(wallet.encrypted.mnemonic, password)
 
     return paddedMnemonic.trim()
   }
@@ -230,7 +231,7 @@ class Keystore {
     try {
       data = JSON.parse(backupData)
     } catch (err) {
-      throw (new Error('Failed to parse backup data'))
+      throw new Error('Failed to parse backup data')
     }
 
     this._restoreBackupData(data)
@@ -238,18 +239,18 @@ class Keystore {
     return data
   }
 
-  getDecryptedAccounts(password) {
+  getDecryptedWallets(password) {
     this._checkPassword(password)
 
-    return this.accounts.map((account) => {
-      const { isReadOnly, type, accountName, address, encrypted } = account
+    return this.wallets.map((wallet) => {
+      const { isReadOnly, type, walletName, address, encrypted } = wallet
       const { privateKey, mnemonic } = encrypted
 
       const decryptedPrivateKey = privateKey ? this._decryptData(privateKey, password) : null
       const decryptedMnemonic = mnemonic ? this._decryptData(mnemonic, password) : null
 
       return {
-        accountName,
+        walletName,
         type,
         readOnly: isReadOnly ? 'yes' : 'no',
         address: address || 'n/a',
@@ -265,27 +266,27 @@ class Keystore {
     this._reEncryptData(password, newPassword)
   }
 
-  _createMnemonicAccount(props) {
-    const { id, password, accountName } = props
+  _createMnemonicWallet(props) {
+    const { id, password, walletName } = props
     const mnemonic = props.mnemonic.toLowerCase()
     const derivationPath = props.derivationPath || this.defaultDerivationPath
 
     if (!isMnemonicValid(mnemonic)) {
-      throw (new Error('Invalid mnemonic'))
+      throw new Error('Invalid mnemonic')
     } else if (!this.constructor.isDerivationPathValid(derivationPath)) {
-      throw (new Error('Invalid derivation path'))
+      throw new Error('Invalid derivation path')
     }
 
     const paddedMnemonic = utils.leftPadString(mnemonic, ' ', this.paddedMnemonicLength)
     const encryptedMnemonic = this._encryptData(paddedMnemonic, password)
     const bip32XPublicKey = this._getXPubFromMnemonic(password, encryptedMnemonic, derivationPath)
 
-    this._checkAccountUniqueness({ bip32XPublicKey }, 'xpub')
+    this._checkWalletUniqueness({ bip32XPublicKey }, 'xpub')
 
-    this.accounts.push({
+    this.wallets.push({
       type: this.mnemonicType,
       id,
-      accountName,
+      walletName,
       derivationPath,
       bip32XPublicKey,
       isReadOnly: false,
@@ -296,19 +297,19 @@ class Keystore {
     })
   }
 
-  _createReadOnlyMnemonicAccount(props) {
-    const { id, bip32XPublicKey, accountName } = props
+  _createReadOnlyMnemonicWallet(props) {
+    const { id, bip32XPublicKey, walletName } = props
 
     if (!isBip32XPublicKeyValid(bip32XPublicKey)) {
-      throw (new Error('Invalid bip32XPublicKey'))
+      throw new Error('Invalid bip32XPublicKey')
     }
 
-    this._checkAccountUniqueness({ bip32XPublicKey }, 'xpub')
+    this._checkWalletUniqueness({ bip32XPublicKey }, 'xpub')
 
-    this.accounts.push({
+    this.wallets.push({
       type: this.mnemonicType,
       id,
-      accountName,
+      walletName,
       bip32XPublicKey,
       isReadOnly: true,
       addressIndex: 0,
@@ -316,23 +317,23 @@ class Keystore {
     })
   }
 
-  _createAddressAccount(props) {
-    const { id, password, accountName, privateKey } = props
+  _createAddressWallet(props) {
+    const { id, password, walletName, privateKey } = props
 
     if (!utils.isValidPrivateKey(privateKey)) {
-      throw (new Error('Private Key is invalid'))
+      throw new Error('Private Key is invalid')
     }
 
     const address = utils.getAddressFromPrivateKey(privateKey)
     const addressLowerCase = address.toLowerCase()
-    this._checkAccountUniqueness({ addressLowerCase }, 'address')
+    this._checkWalletUniqueness({ addressLowerCase }, 'address')
 
-    this.accounts.push({
+    this.wallets.push({
       type: this.addressType,
       id,
       address,
       addressLowerCase,
-      accountName,
+      walletName,
       isReadOnly: false,
       encrypted: {
         privateKey: this._encryptData(privateKey, password, true),
@@ -340,31 +341,31 @@ class Keystore {
     })
   }
 
-  _createReadOnlyAddressAccount(props) {
-    const { id, accountName, address } = props
+  _createReadOnlyAddressWallet(props) {
+    const { id, walletName, address } = props
 
     if (!utils.isValidAddress(address)) {
-      throw (new Error('Address is invalid'))
+      throw new Error('Address is invalid')
     }
 
     const addressLowerCase = address.toLowerCase()
-    this._checkAccountUniqueness({ addressLowerCase }, 'address')
+    this._checkWalletUniqueness({ addressLowerCase }, 'address')
 
-    this.accounts.push({
+    this.wallets.push({
       type: this.addressType,
       id,
       address,
       addressLowerCase,
-      accountName,
+      walletName,
       isReadOnly: true,
       encrypted: {},
     })
   }
 
-  _getExtendedAccountInfo(accountName) {
+  _getExtendedWalletInfo(walletName) {
     const id = uuidv4()
 
-    return { id: uuidv4(), accountName: accountName || id }
+    return { id: uuidv4(), walletName: walletName || id }
   }
 
   _deriveKeyFromPassword(password) {
@@ -390,8 +391,8 @@ class Keystore {
     })
   }
 
-  _getPrivateKeyFromMnemonic(password, account, addressIndex) {
-    const { encrypted, derivationPath } = account
+  _getPrivateKeyFromMnemonic(password, wallet, addressIndex) {
+    const { encrypted, derivationPath } = wallet
     const hdRoot = this._getPrivateHdRoot(password, encrypted.mnemonic, derivationPath)
     const generatedKey = this._generateKey(hdRoot, addressIndex)
 
@@ -445,31 +446,31 @@ class Keystore {
     return hdRoot.hdPublicKey.toString()
   }
 
-  _setAccount(account, props) {
-    const accountIndex = this._getAccountIndex(account.id)
+  _setWallet(wallet, props) {
+    const walletIndex = this._getWalletIndex(wallet.id)
 
-    if (accountIndex === -1) {
-      throw (new Error('Account not found'))
+    if (walletIndex === -1) {
+      throw new Error('Wallet not found')
     }
 
-    const newAccount = { ...account, ...props }
+    const newWallet = { ...wallet, ...props }
 
-    this.accounts.splice(accountIndex, 1, newAccount)
+    this.wallets.splice(walletIndex, 1, newWallet)
 
-    return newAccount
+    return newWallet
   }
 
-  _getAccount(findProps) {
-    return find(this.accounts, findProps)
+  _getWallet(findProps) {
+    return find(this.wallets, findProps)
   }
 
-  _getAccountIndex(accountId) {
-    return findIndex(this.accounts, { id: accountId })
+  _getWalletIndex(walletId) {
+    return findIndex(this.wallets, { id: walletId })
   }
 
   _getBackupData() {
     const {
-      accounts,
+      wallets,
       defaultDerivationPath,
       defaultEncryptionType,
       scryptParams,
@@ -480,7 +481,7 @@ class Keystore {
     } = this
 
     return {
-      accounts,
+      wallets,
       defaultDerivationPath,
       defaultEncryptionType,
       scryptParams,
@@ -494,7 +495,7 @@ class Keystore {
   _restoreBackupData(backupData) {
     if (backupData.version <= packageData.version) {
       const {
-        accounts,
+        wallets,
         defaultDerivationPath,
         defaultEncryptionType,
         scryptParams,
@@ -503,7 +504,7 @@ class Keystore {
         salt,
       } = backupData
 
-      this.accounts = accounts || []
+      this.wallets = wallets || []
       this.defaultDerivationPath = defaultDerivationPath || this.defaultDerivationPath
       this.defaultEncryptionType = defaultEncryptionType || this.defaultEncryptionType
       this.scryptParams = scryptParams || this.scryptParams
@@ -514,21 +515,21 @@ class Keystore {
     }
   }
 
-  _checkAccountExist(account) {
-    if (!account) {
-      throw (new Error('Account not found'))
+  _checkWalletExist(wallet) {
+    if (!wallet) {
+      throw new Error('Wallet not found')
     }
   }
 
-  _checkReadOnly(account) {
-    if (account.isReadOnly) {
-      throw (new Error('Account is read only'))
+  _checkReadOnly(wallet) {
+    if (wallet.isReadOnly) {
+      throw new Error('Wallet is read only')
     }
   }
 
   _checkPassword(password) {
     if (!(password && password.length)) {
-      throw (new Error('Password is empty'))
+      throw new Error('Password is empty')
     }
 
     if (!this.checkPasswordData) {
@@ -543,18 +544,18 @@ class Keystore {
       const decryptedData = this._decryptData(this.checkPasswordData, password)
 
       if (!(decryptedData && decryptedData.length)) {
-        throw (new Error(errMessage))
+        throw new Error(errMessage)
       }
     } catch (e) {
-      throw (new Error(errMessage))
+      throw new Error(errMessage)
     }
   }
 
-  _checkAccountUniqueness(uniqueProperty, propertyName) {
-    const isAccountExist = !!this._getAccount(uniqueProperty)
+  _checkWalletUniqueness(uniqueProperty, propertyName) {
+    const isWalletExist = !!this._getWallet(uniqueProperty)
 
-    if (isAccountExist) {
-      throw (new Error(`Account with this ${propertyName} already exists`))
+    if (isWalletExist) {
+      throw new Error(`Wallet with this ${propertyName} already exists`)
     }
   }
 
@@ -562,7 +563,7 @@ class Keystore {
     const testPasswordResult = testPassword(password, this.passwordConfig)
 
     if (testPasswordResult.failedTests.length) {
-      throw (new Error(testPasswordResult.errors[0]))
+      throw new Error(testPasswordResult.errors[0])
     }
 
     const checkPasswordData = utils.generateSalt(this.saltByteCount)
@@ -575,8 +576,8 @@ class Keystore {
   }
 
   _reEncryptData(password, newPassword) {
-    this.accounts.forEach((account) => {
-      const { isReadOnly, encrypted } = account
+    this.wallets.forEach((wallet) => {
+      const { isReadOnly, encrypted } = wallet
 
       if (isReadOnly) {
         return
@@ -597,7 +598,7 @@ class Keystore {
         }
       })
 
-      this._setAccount(account, { encrypted: newEncrypted })
+      this._setWallet(wallet, { encrypted: newEncrypted })
     })
   }
 }

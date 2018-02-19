@@ -7,27 +7,27 @@ const keystore = new Keystore()
 
 const password = 'JHJ23jG^*DGHj667s'
 const bip32XPublicKey = 'xpub6DZVENYSZsMW1D48vLG924qPaxz83TZc43tK7zMbCdFcv1La9pqe6pBiuxdzDNjufXRW42CfJEK8indRdhfDoWvYfZDZS1xjkZrQB5iYtHy'
-const accountName = 'mnemonic read only account'
-const accountIdLength = 36
+const walletName = 'mnemonic read only wallet'
+const walletIdLength = 36
 const currentKeystoreVersion = packageData.version
 
-let accountId
+let walletId
 let serializedKeystoreData
 
 describe('serialize / deserialize', function() {
   this.timeout(20000)
 
-  it('createAccount() should create example account', function(done) {
-    accountId = keystore.createAccount({
+  it('createWallet() should create example wallet', function(done) {
+    walletId = keystore.createWallet({
       password,
-      accountName,
+      walletName,
       bip32XPublicKey,
       type: 'mnemonic',
       isReadOnly: true,
     })
 
-    accountId.should.be.a.String()
-    accountId.length.should.be.equal(accountIdLength)
+    walletId.should.be.a.String()
+    walletId.length.should.be.equal(walletIdLength)
 
     done()
   })
@@ -45,9 +45,9 @@ describe('serialize / deserialize', function() {
     const deserializedKeystoreData = keystore.deserialize(serializedKeystoreData)
 
     deserializedKeystoreData.should.be.an.Object()
-    deserializedKeystoreData.accounts.should.be.an.Array()
-    deserializedKeystoreData.accounts[0].should.be.an.Object()
-    deserializedKeystoreData.accounts[0].id.should.be.equal(accountId)
+    deserializedKeystoreData.wallets.should.be.an.Array()
+    deserializedKeystoreData.wallets[0].should.be.an.Object()
+    deserializedKeystoreData.wallets[0].id.should.be.equal(walletId)
     deserializedKeystoreData.version.should.be.equal(currentKeystoreVersion)
 
     done()

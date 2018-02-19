@@ -3,8 +3,8 @@ const Keystore = require('../index')
 const keystore = new Keystore()
 
 const password = 'JHJ23jG^*DGHj667s'
-const accountName = 'address read only account'
-const accountIdLength = 36
+const walletName = 'address read only wallet'
+const walletIdLength = 36
 const addressLength = 42
 
 const privateKeyAddressPair = {
@@ -12,29 +12,29 @@ const privateKeyAddressPair = {
   address: '0xb5c99109ded6212f667b9467a42dad1f195cdba9',
 }
 
-let accountId
+let walletId
 
-describe('address read only account', function() {
+describe('address read only wallet', function() {
   this.timeout(20000)
 
-  it('createAccount() should create account and return id of it', function(done) {
-    accountId = keystore.createAccount({
+  it('createWallet() should create wallet and return id of it', function(done) {
+    walletId = keystore.createWallet({
       password,
-      accountName,
+      walletName,
       type: 'address',
       isReadOnly: true,
       address: privateKeyAddressPair.address,
     })
 
-    accountId.should.be.a.String()
-    accountId.length.should.be.equal(accountIdLength)
+    walletId.should.be.a.String()
+    walletId.length.should.be.equal(walletIdLength)
 
     done()
   })
 
-  it('createAccount() [FULL ACCESS] should throw error (account with this address exists)', function(done) {
+  it('createWallet() [FULL ACCESS] should throw error (wallet with this address exists)', function(done) {
     try {
-      keystore.createAccount({
+      keystore.createWallet({
         password,
         type: 'address',
         isReadOnly: false,
@@ -44,17 +44,17 @@ describe('address read only account', function() {
       done(new Error('Exception not thrown'))
     } catch (e) {
       e.should.be.an.Object()
-      e.message.should.be.equal('Account with this address already exists')
+      e.message.should.be.equal('Wallet with this address already exists')
 
       done()
     }
   })
 
-  it('createAccount() should throw error (account with this name exists)', function(done) {
+  it('createWallet() should throw error (wallet with this name exists)', function(done) {
     try {
-      keystore.createAccount({
+      keystore.createWallet({
         password,
-        accountName,
+        walletName,
         type: 'address',
         isReadOnly: true,
         address: privateKeyAddressPair.address,
@@ -63,15 +63,15 @@ describe('address read only account', function() {
       done(new Error('Exception not thrown'))
     } catch (e) {
       e.should.be.an.Object()
-      e.message.should.be.equal('Account with this name already exists')
+      e.message.should.be.equal('Wallet with this name already exists')
 
       done()
     }
   })
 
-  it('createAccount() should throw error (address is invalid)', function(done) {
+  it('createWallet() should throw error (address is invalid)', function(done) {
     try {
-      keystore.createAccount({
+      keystore.createWallet({
         password,
         type: 'address',
         address: 'qwert',
@@ -87,9 +87,9 @@ describe('address read only account', function() {
     }
   })
 
-  it('createAccount() should throw error (invalid type of account)', function(done) {
+  it('createWallet() should throw error (invalid type of wallet)', function(done) {
     try {
-      keystore.createAccount({
+      keystore.createWallet({
         password,
         type: 'qwert',
         isReadOnly: true,
@@ -99,15 +99,15 @@ describe('address read only account', function() {
       done(new Error('Exception not thrown'))
     } catch (e) {
       e.should.be.an.Object()
-      e.message.should.be.equal('Type of account not provided or incorrect')
+      e.message.should.be.equal('Type of wallet not provided or incorrect')
 
       done()
     }
   })
 
-  it('createAccount() should throw error (type not provided)', function(done) {
+  it('createWallet() should throw error (type not provided)', function(done) {
     try {
-      keystore.createAccount({
+      keystore.createWallet({
         password,
         isReadOnly: true,
         address: privateKeyAddressPair.address,
@@ -116,15 +116,15 @@ describe('address read only account', function() {
       done(new Error('Exception not thrown'))
     } catch (e) {
       e.should.be.an.Object()
-      e.message.should.be.equal('Type of account not provided or incorrect')
+      e.message.should.be.equal('Type of wallet not provided or incorrect')
 
       done()
     }
   })
 
-  it('createAccount() should throw error (incorrect password)', function(done) {
+  it('createWallet() should throw error (incorrect password)', function(done) {
     try {
-      keystore.createAccount({
+      keystore.createWallet({
         isReadOnly: true,
         password: 'some_wrong_password',
         address: privateKeyAddressPair.address,
@@ -139,38 +139,38 @@ describe('address read only account', function() {
     }
   })
 
-  it('getAccount() should return created account', function(done) {
-    const account = keystore.getAccount({ id: accountId })
+  it('getWallet() should return created wallet', function(done) {
+    const wallet = keystore.getWallet({ id: walletId })
 
-    account.id.should.be.equal(accountId)
-    account.accountName.should.be.equal(accountName)
-    account.address.should.be.equal(privateKeyAddressPair.address)
-    account.address.length.should.be.equal(addressLength)
+    wallet.id.should.be.equal(walletId)
+    wallet.walletName.should.be.equal(walletName)
+    wallet.address.should.be.equal(privateKeyAddressPair.address)
+    wallet.address.length.should.be.equal(addressLength)
 
     done()
   })
 
-  it('getAccount() should throw error (without account id)', function(done) {
+  it('getWallet() should throw error (without wallet id)', function(done) {
     try {
-      keystore.getAccount()
+      keystore.getWallet()
 
       done(new Error('Exception not thrown'))
     } catch (e) {
       e.should.be.an.Object()
-      e.message.should.be.equal('Account ID not provided')
+      e.message.should.be.equal('Wallet ID not provided')
 
       done()
     }
   })
 
-  it('getPrivateKey() should throw error (for read only account)', function(done) {
+  it('getPrivateKey() should throw error (for read only wallet)', function(done) {
     try {
-      keystore.getPrivateKey(password, accountId)
+      keystore.getPrivateKey(password, walletId)
 
       done(new Error('Exception not thrown'))
     } catch (e) {
       e.should.be.an.Object()
-      e.message.should.be.equal('Account is read only')
+      e.message.should.be.equal('Wallet is read only')
 
       done()
     }

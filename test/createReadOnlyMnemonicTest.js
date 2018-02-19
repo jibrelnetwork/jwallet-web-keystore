@@ -4,36 +4,36 @@ const keystore = new Keystore()
 
 const password = 'JHJ23jG^*DGHj667s'
 const bip32XPublicKey = 'xpub6DZVENYSZsMW1D48vLG924qPaxz83TZc43tK7zMbCdFcv1La9pqe6pBiuxdzDNjufXRW42CfJEK8indRdhfDoWvYfZDZS1xjkZrQB5iYtHy'
-const accountName = 'mnemonic read only account'
+const walletName = 'mnemonic read only wallet'
 const addressesCountToDerive = 5
 const customAddressesCountToDerive = 10
-const accountIdLength = 36
+const walletIdLength = 36
 const addressLength = 42
 
-let accountId
+let walletId
 let firstDerivedAddress
 
-describe('mnemonic read only account', function() {
+describe('mnemonic read only wallet', function() {
   this.timeout(20000)
 
-  it('createAccount() should create account and return id of it', function(done) {
-    accountId = keystore.createAccount({
+  it('createWallet() should create wallet and return id of it', function(done) {
+    walletId = keystore.createWallet({
       password,
-      accountName,
+      walletName,
       bip32XPublicKey,
       type: 'mnemonic',
       isReadOnly: true,
     })
 
-    accountId.should.be.a.String()
-    accountId.length.should.be.equal(accountIdLength)
+    walletId.should.be.a.String()
+    walletId.length.should.be.equal(walletIdLength)
 
     done()
   })
 
-  it('createAccount() should throw error (bip32XPublicKey is invalid)', function(done) {
+  it('createWallet() should throw error (bip32XPublicKey is invalid)', function(done) {
     try {
-      keystore.createAccount({
+      keystore.createWallet({
         password,
         type: 'mnemonic',
         isReadOnly: true,
@@ -49,18 +49,18 @@ describe('mnemonic read only account', function() {
     }
   })
 
-  it('getAccount() should return created account', function(done) {
-    const account = keystore.getAccount({ id: accountId })
+  it('getWallet() should return created wallet', function(done) {
+    const wallet = keystore.getWallet({ id: walletId })
 
-    account.id.should.be.equal(accountId)
-    account.accountName.should.be.equal(accountName)
-    account.bip32XPublicKey.should.be.equal(bip32XPublicKey)
+    wallet.id.should.be.equal(walletId)
+    wallet.walletName.should.be.equal(walletName)
+    wallet.bip32XPublicKey.should.be.equal(bip32XPublicKey)
 
     done()
   })
 
   it('getAddressesFromMnemonic() should derive addresses from mnemonic with default path', function(done) {
-    const addresses = keystore.getAddressesFromMnemonic(accountId, 0, customAddressesCountToDerive)
+    const addresses = keystore.getAddressesFromMnemonic(walletId, 0, customAddressesCountToDerive)
 
     addresses.should.be.an.Array()
     addresses.length.should.be.equal(customAddressesCountToDerive)
@@ -74,7 +74,7 @@ describe('mnemonic read only account', function() {
   })
 
   it('getAddressFromMnemonic() should derive address by index from mnemonic', function(done) {
-    const address = keystore.getAddressFromMnemonic(accountId, 0)
+    const address = keystore.getAddressFromMnemonic(walletId, 0)
 
     address.should.be.a.String()
     address.length.should.be.equal(addressLength)
@@ -84,51 +84,51 @@ describe('mnemonic read only account', function() {
 
   it('setAddressIndex() should set current address index', function(done) {
     const addressIndex = 3
-    const account = keystore.setAddressIndex(accountId, addressIndex)
+    const wallet = keystore.setAddressIndex(walletId, addressIndex)
 
-    account.should.be.an.Object()
-    account.id.should.be.equal(accountId)
-    account.addressIndex.should.be.a.Number()
-    account.addressIndex.should.be.equal(addressIndex)
+    wallet.should.be.an.Object()
+    wallet.id.should.be.equal(walletId)
+    wallet.addressIndex.should.be.a.Number()
+    wallet.addressIndex.should.be.equal(addressIndex)
 
     done()
   })
 
-  it('getMnemonic() should throw error (account is read only)', function(done) {
+  it('getMnemonic() should throw error (wallet is read only)', function(done) {
     try {
-      keystore.getMnemonic(password, accountId)
+      keystore.getMnemonic(password, walletId)
 
       done(new Error('Exception not thrown'))
     } catch (e) {
       e.should.be.an.Object()
-      e.message.should.be.equal('Account is read only')
+      e.message.should.be.equal('Wallet is read only')
 
       done()
     }
   })
 
-  it('removeAccount() should return false (incorrect accountId)', function(done) {
-    const result = keystore.removeAccount('')
-    const accounts = keystore.getAccounts()
+  it('removeWallet() should return false (incorrect walletId)', function(done) {
+    const result = keystore.removeWallet('')
+    const wallets = keystore.getWallets()
 
     result.should.be.a.Boolean()
     result.should.be.equal(false)
 
-    accounts.should.be.an.Array()
-    accounts.length.should.be.equal(1)
+    wallets.should.be.an.Array()
+    wallets.length.should.be.equal(1)
 
     done()
   })
 
-  it('removeAccount() should return true', function(done) {
-    const result = keystore.removeAccount(accountId)
-    const accounts = keystore.getAccounts()
+  it('removeWallet() should return true', function(done) {
+    const result = keystore.removeWallet(walletId)
+    const wallets = keystore.getWallets()
 
     result.should.be.a.Boolean()
     result.should.be.equal(true)
 
-    accounts.should.be.an.Array()
-    accounts.length.should.be.equal(0)
+    wallets.should.be.an.Array()
+    wallets.length.should.be.equal(0)
 
     done()
   })
