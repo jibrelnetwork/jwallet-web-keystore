@@ -8,7 +8,9 @@
     "test": "./node_modules/.bin/mocha --compilers babel-register",
     "clean": "rm -rf ./lib",
     "compile": "npm run clean && ./node_modules/.bin/babel ./src --out-dir ./lib",
-    "build": "npm run lint && npm run compile && npm test"
+    "build": "npm run lint && npm run compile && npm test",
+    "precommit": "./node_modules/.bin/lint-staged",
+    "prepush": "npm run build"
   },
   "repository": {
     "type": "git",
@@ -65,6 +67,8 @@
     "eslint": "4.7.2",
     "eslint-config-airbnb-base": "12.0.1",
     "eslint-plugin-import": "2.7.0",
+    "husky": "0.14.3",
+    "lint-staged": "6.1.1",
     "mocha": "3.5.3",
     "should": "13.1.0",
     "webpack": "3.6.0"
