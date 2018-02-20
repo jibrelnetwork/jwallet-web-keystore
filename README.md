@@ -46,7 +46,7 @@ const keystore = new Keystore(props)
 | name                 | String  | Wallet name                                               |
 | salt                 | String  | Salt for enforcing of password                            |
 | address              | String  | Address of wallet                                         |
-| userType             | String  | User-friendly type of wallet                              |
+| customType           | String  | User-friendly type of wallet                              |
 | isReadOnly           | Boolean | Read-only flag of wallet                                  |
 | addressIndex         | Number  | Current index of address of `mnemonic` wallet             |
 | derivationPath       | String  | Derivation path for generating of addresses from mnemonic |

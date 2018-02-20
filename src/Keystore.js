@@ -271,8 +271,8 @@ class Keystore {
       derivationPath,
       addressIndex: 0,
       isReadOnly: false,
-      userType: 'mnemonic',
       bip32XPublicKey: xpub,
+      customType: 'mnemonic',
       type: this.mnemonicType,
       encrypted: {
         privateKey: null,
@@ -300,7 +300,7 @@ class Keystore {
       bip32XPublicKey,
       addressIndex: 0,
       isReadOnly: true,
-      userType: 'bip32Xpub',
+      customType: 'bip32Xpub',
       type: this.mnemonicType,
       /**
        * Another wallet data, necessary for consistency of types
@@ -329,8 +329,8 @@ class Keystore {
       salt,
       address,
       isReadOnly: false,
-      userType: 'privateKey',
       type: this.addressType,
+      customType: 'privateKey',
       encrypted: {
         mnemonic: null,
         privateKey: this._encryptPrivateKey(privateKey, password, salt),
@@ -358,7 +358,7 @@ class Keystore {
       name,
       address,
       isReadOnly: true,
-      userType: 'address',
+      customType: 'address',
       type: this.addressType,
       /**
        * Another wallet data, necessary for consistency of types
