@@ -5,12 +5,13 @@ const keystore = new Keystore()
 const password = 'JHJ23jG^*DGHj667s'
 const newPassword = 'Tw5E^g7djfd(29j'
 const invalidPassword = 'wrOng pa$$w0rd'
-const walletName = 'address wallet'
+const name = 'address wallet'
 const anotherWalletName = 'another address wallet'
 const updatedWalletName = 'updated address wallet'
 const walletIdLength = 36
 const addressLength = 42
 const privateKeyLength = 66
+const wrongWalletId = 'some_wrong_id'
 
 const privateKeyAddressPair = {
   privateKey: '0xa7fcb4efc392d2c8983cbfe64063f994f85120e60843407af95907d905d0dc9f',
@@ -25,7 +26,7 @@ describe('address wallet', function() {
   it('createWallet() should throw error (password is weak)', function(done) {
     try {
       keystore.createWallet({
-        walletName,
+        name,
         type: 'address',
         password: 'some weak password',
         privateKey: privateKeyAddressPair.privateKey,
@@ -42,8 +43,8 @@ describe('address wallet', function() {
 
   it('createWallet() should create wallet and return id of it', function(done) {
     walletId = keystore.createWallet({
+      name,
       password,
-      walletName,
       type: 'address',
       privateKey: privateKeyAddressPair.privateKey,
     })
@@ -54,23 +55,25 @@ describe('address wallet', function() {
     done()
   })
 
-  it('createWallet() [READ ONLY] should throw error (wallet with this address exists)', function(done) {
-    try {
-      keystore.createWallet({
-        password,
-        type: 'address',
-        isReadOnly: true,
-        address: privateKeyAddressPair.address,
-      })
+  it('createWallet() [READ ONLY] should throw error (wallet with this address exists)',
+    function(done) {
+      try {
+        keystore.createWallet({
+          password,
+          type: 'address',
+          isReadOnly: true,
+          address: privateKeyAddressPair.address,
+        })
 
-      done(new Error('Exception not thrown'))
-    } catch (e) {
-      e.should.be.an.Object()
-      e.message.should.be.equal('Wallet with this address already exists')
+        done(new Error('Exception not thrown'))
+      } catch (e) {
+        e.should.be.an.Object()
+        e.message.should.be.equal('Wallet with this address already exists')
 
-      done()
+        done()
+      }
     }
-  })
+  )
 
   it('createWallet() should throw error (privateKey is invalid)', function(done) {
     try {
@@ -96,7 +99,7 @@ describe('address wallet', function() {
       done(new Error('Exception not thrown'))
     } catch (e) {
       e.should.be.an.Object()
-      e.message.should.be.equal('New wallet name should be not empty')
+      e.message.should.be.equal('New wallet name should not be empty')
 
       done()
     }
@@ -104,31 +107,35 @@ describe('address wallet', function() {
 
   it('setWalletName() should throw error (for not existed wallet)', function(done) {
     try {
-      keystore.setWalletName('some_wrong_id')
+      keystore.setWalletName(wrongWalletId, '123')
 
       done(new Error('Exception not thrown'))
     } catch (e) {
       e.should.be.an.Object()
-      e.message.should.be.equal('Wallet not found')
+      e.message.should.be.equal(`Wallet with id ${wrongWalletId} not found`)
 
       done()
     }
   })
 
-  it('setWalletName() should return unchanged wallet if walletName is the same', function(done) {
-    const sameWallet = keystore.setWalletName(walletId, walletName)
+  it('setWalletName() should throw error (if name is the same)', function(done) {
+    try {
+      keystore.setWalletName(walletId, name)
 
-    sameWallet.id.should.be.equal(walletId)
-    sameWallet.walletName.should.be.equal(walletName)
+      done(new Error('Exception not thrown'))
+    } catch (e) {
+      e.should.be.an.Object()
+      e.message.should.be.equal('New wallet name should not be equal with the old one')
 
-    done()
+      done()
+    }
   })
 
   it('setWalletName() should throw error (wallet with this name exists)', function(done) {
     const anotherWalletId = keystore.createWallet({
       password,
-      walletName: anotherWalletName,
       type: 'address',
+      name: anotherWalletName,
       privateKey: `0x${'1'.repeat(64)}`,
     })
 
@@ -148,90 +155,63 @@ describe('address wallet', function() {
     const wallet = keystore.setWalletName(walletId, updatedWalletName)
 
     wallet.id.should.be.equal(walletId)
-    wallet.walletName.should.be.equal(updatedWalletName)
+    wallet.name.should.be.equal(updatedWalletName)
 
     done()
   })
 
   it('getWallet() should return updated wallet', function(done) {
-    const wallet = keystore.getWallet({ id: walletId })
+    const wallet = keystore.getWallet(walletId)
 
     wallet.id.should.be.equal(walletId)
-    wallet.walletName.should.be.equal(updatedWalletName)
+    wallet.name.should.be.equal(updatedWalletName)
+
+    done()
+  })
+
+  it('getAddress() should get current address', function(done) {
+    const walletAddress = keystore.getAddress(walletId)
+
+    walletAddress.should.be.a.String()
+    walletAddress.length.should.be.equal(addressLength)
+    walletAddress.should.be.equal(privateKeyAddressPair.address)
 
     done()
   })
 
   it('setPassword() should change keystore password', function(done) {
-    keystore.setPassword(password, newPassword)
+    keystore.setPassword(password, newPassword, walletId)
 
     done()
   })
 
   it('getPrivateKey() should get current private key', function(done) {
-    const currentPrivateKey = keystore.getPrivateKey(newPassword, walletId)
+    const walletPrivateKey = keystore.getPrivateKey(newPassword, walletId)
 
-    currentPrivateKey.should.be.a.String()
-    currentPrivateKey.length.should.be.equal(privateKeyLength)
-    currentPrivateKey.should.be.equal(privateKeyAddressPair.privateKey)
-
-    done()
-  })
-
-  it('getDecryptedWallets() should get current private key', function(done) {
-    const decryptedWallets = keystore.getDecryptedWallets(newPassword)
-
-    decryptedWallets.should.be.an.Array()
-    decryptedWallets.length.should.be.equal(2)
-    decryptedWallets[0].walletName.should.be.equal(updatedWalletName)
-    decryptedWallets[0].privateKey.should.be.equal(privateKeyAddressPair.privateKey)
+    walletPrivateKey.should.be.a.String()
+    walletPrivateKey.length.should.be.equal(privateKeyLength)
+    walletPrivateKey.should.be.equal(privateKeyAddressPair.privateKey)
 
     done()
   })
 
-  it('removeWallets() should throw error (incorrect password)', function(done) {
-    try {
-      keystore.removeWallets(invalidPassword)
+  it('getDecryptedWallet() should get current private key', function(done) {
+    const decryptedWallet = keystore.getDecryptedWallet(newPassword, walletId)
 
-      done(new Error('Exception not thrown'))
-    } catch (e) {
-      e.should.be.an.Object()
-      e.message.should.be.equal('Password is incorrect')
+    decryptedWallet.should.be.an.Object()
+    decryptedWallet.name.should.be.equal(updatedWalletName)
+    decryptedWallet.privateKey.should.be.equal(privateKeyAddressPair.privateKey)
 
-      done()
-    }
+    done()
   })
 
-  it('removeWallets() should remove all wallets (with password param)', function(done) {
-    keystore.removeWallets(newPassword)
+  it('removeWallets() should remove all wallets', function(done) {
+    keystore.removeWallets()
 
     const wallets = keystore.getWallets()
 
     wallets.should.be.an.Array()
     wallets.length.should.be.equal(0)
-
-    done()
-  })
-
-  it('removeWallets() should remove all wallets (without params)', function(done) {
-    keystore.createWallet({
-      password,
-      walletName,
-      type: 'address',
-      privateKey: privateKeyAddressPair.privateKey,
-    })
-
-    const walletsBeforeRemove = keystore.getWallets()
-
-    walletsBeforeRemove.should.be.an.Array()
-    walletsBeforeRemove.length.should.be.equal(1)
-
-    keystore.removeWallets()
-
-    const walletsAfterRemove = keystore.getWallets()
-
-    walletsAfterRemove.should.be.an.Array()
-    walletsAfterRemove.length.should.be.equal(0)
 
     done()
   })

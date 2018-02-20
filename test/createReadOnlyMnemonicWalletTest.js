@@ -4,11 +4,12 @@ const keystore = new Keystore()
 
 const password = 'JHJ23jG^*DGHj667s'
 const bip32XPublicKey = 'xpub6DZVENYSZsMW1D48vLG924qPaxz83TZc43tK7zMbCdFcv1La9pqe6pBiuxdzDNjufXRW42CfJEK8indRdhfDoWvYfZDZS1xjkZrQB5iYtHy'
-const walletName = 'mnemonic read only wallet'
+const name = 'mnemonic read only wallet'
 const addressesCountToDerive = 5
 const customAddressesCountToDerive = 10
 const walletIdLength = 36
 const addressLength = 42
+const incorrectWalletId = 'incorrect'
 
 let walletId
 let firstDerivedAddress
@@ -18,8 +19,8 @@ describe('mnemonic read only wallet', function() {
 
   it('createWallet() should create wallet and return id of it', function(done) {
     walletId = keystore.createWallet({
+      name,
       password,
-      walletName,
       bip32XPublicKey,
       type: 'mnemonic',
       isReadOnly: true,
@@ -50,10 +51,10 @@ describe('mnemonic read only wallet', function() {
   })
 
   it('getWallet() should return created wallet', function(done) {
-    const wallet = keystore.getWallet({ id: walletId })
+    const wallet = keystore.getWallet(walletId)
 
     wallet.id.should.be.equal(walletId)
-    wallet.walletName.should.be.equal(walletName)
+    wallet.name.should.be.equal(name)
     wallet.bip32XPublicKey.should.be.equal(bip32XPublicKey)
 
     done()
@@ -73,8 +74,8 @@ describe('mnemonic read only wallet', function() {
     done()
   })
 
-  it('getAddressFromMnemonic() should derive address by index from mnemonic', function(done) {
-    const address = keystore.getAddressFromMnemonic(walletId, 0)
+  it('getAddress() should derive from mnemonic', function(done) {
+    const address = keystore.getAddress(walletId)
 
     address.should.be.a.String()
     address.length.should.be.equal(addressLength)
@@ -107,25 +108,25 @@ describe('mnemonic read only wallet', function() {
     }
   })
 
-  it('removeWallet() should return false (incorrect walletId)', function(done) {
-    const result = keystore.removeWallet('')
-    const wallets = keystore.getWallets()
+  it('removeWallet() should throw error (incorrect walletId)', function(done) {
+    try {
+      keystore.removeWallet(incorrectWalletId)
 
-    result.should.be.a.Boolean()
-    result.should.be.equal(false)
+      done(new Error('Exception not thrown'))
+    } catch (e) {
+      e.should.be.an.Object()
+      e.message.should.be.equal(`Wallet with id ${incorrectWalletId} not found`)
 
-    wallets.should.be.an.Array()
-    wallets.length.should.be.equal(1)
-
-    done()
+      done()
+    }
   })
 
   it('removeWallet() should return true', function(done) {
     const result = keystore.removeWallet(walletId)
     const wallets = keystore.getWallets()
 
-    result.should.be.a.Boolean()
-    result.should.be.equal(true)
+    result.should.be.an.Object()
+    result.id.should.be.equal(walletId)
 
     wallets.should.be.an.Array()
     wallets.length.should.be.equal(0)

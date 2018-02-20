@@ -3,7 +3,7 @@ const Keystore = require('../index')
 const keystore = new Keystore()
 
 const password = 'JHJ23jG^*DGHj667s'
-const walletName = 'mnemonic wallet'
+const name = 'mnemonic wallet'
 const derivationPath = "m/44'/60'/0'/0"
 const customDerivationPath = "m/44'/60'/1'/0"
 const customDerivationPath2 = "m/44'/60'/2'/0"
@@ -28,11 +28,11 @@ describe('mnemonic wallet', function() {
 
   it('createWallet() should create wallet and return id of it', function(done) {
     walletId = keystore.createWallet({
+      name,
       password,
-      mnemonic: mnemonicXPubPair.mnemonic,
-      walletName,
       type: 'mnemonic',
       isReadOnly: false,
+      mnemonic: mnemonicXPubPair.mnemonic,
     })
 
     walletId.should.be.a.String()
@@ -62,36 +62,38 @@ describe('mnemonic wallet', function() {
     try {
       keystore.createWallet({
         password,
+        type: 'mnemonic',
         mnemonic: mnemonicXPubPair.mnemonic,
-        type: 'mnemonic',
       })
 
       done(new Error('Exception not thrown'))
     } catch (e) {
       e.should.be.an.Object()
-      e.message.should.be.equal('Wallet with this xpub already exists')
+      e.message.should.be.equal('Wallet with this bip32XPublicKey already exists')
 
       done()
     }
   })
 
-  it('createWallet() [READ ONLY] should throw error (wallet with this xpub exists)', function(done) {
-    try {
-      keystore.createWallet({
-        password,
-        bip32XPublicKey: mnemonicXPubPair.bip32XPublicKey,
-        type: 'mnemonic',
-        isReadOnly: true,
-      })
+  it('createWallet() [READ ONLY] should throw error (wallet with this xpub exists)',
+    function(done) {
+      try {
+        keystore.createWallet({
+          password,
+          type: 'mnemonic',
+          isReadOnly: true,
+          bip32XPublicKey: mnemonicXPubPair.bip32XPublicKey,
+        })
 
-      done(new Error('Exception not thrown'))
-    } catch (e) {
-      e.should.be.an.Object()
-      e.message.should.be.equal('Wallet with this xpub already exists')
+        done(new Error('Exception not thrown'))
+      } catch (e) {
+        e.should.be.an.Object()
+        e.message.should.be.equal('Wallet with this bip32XPublicKey already exists')
 
-      done()
+        done()
+      }
     }
-  })
+  )
 
   it('getWallets() should return wallets list with one item', function(done) {
     const wallets = keystore.getWallets()
@@ -99,7 +101,7 @@ describe('mnemonic wallet', function() {
     wallets.should.be.an.Array()
     wallets.length.should.be.equal(1)
     wallets[0].id.should.be.equal(walletId)
-    wallets[0].walletName.should.be.equal(walletName)
+    wallets[0].name.should.be.equal(name)
 
     done()
   })
@@ -165,9 +167,9 @@ describe('mnemonic wallet', function() {
        */
       const newId = keystore.createWallet({
         password,
-        bip32XPublicKey: mnemonicXPubPair.bip32XPublicKeyCustomPath,
         type: 'mnemonic',
         isReadOnly: true,
+        bip32XPublicKey: mnemonicXPubPair.bip32XPublicKeyCustomPath,
       })
 
       keystore.setDerivationPath(password, walletId, customDerivationPath)
@@ -175,7 +177,7 @@ describe('mnemonic wallet', function() {
       done(new Error('Exception not thrown'))
     } catch (e) {
       e.should.be.an.Object()
-      e.message.should.be.equal('Wallet with this xpub already exists')
+      e.message.should.be.equal('Wallet with this bip32XPublicKey already exists')
 
       done()
     }
@@ -218,7 +220,7 @@ describe('mnemonic wallet', function() {
   })
 
   it('getPrivateKey() should get private key by index', function(done) {
-    const privateKey = keystore.getPrivateKey(password, walletId, addressIndex)
+    const privateKey = keystore.getPrivateKey(password, walletId)
 
     privateKey.should.be.a.String()
     privateKey.length.should.be.equal(privateKeyLength)

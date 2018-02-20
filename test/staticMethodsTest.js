@@ -1,7 +1,9 @@
 const should = require('should')
 const Keystore = require('../index')
 
-const validMnemonic = 'come average primary sunny profit eager toy pulp struggle hazard tourist round'
+const validMnemonic = 'come average primary sunny profit eager toy pulp struggle hazard tourist ' +
+  'round'
+
 const invalidMnemonic = `${validMnemonic} some other words`
 
 const mnemonicEntropy = 'some custom entropy'
@@ -34,7 +36,11 @@ describe('generateMnemonic', function() {
   it('should generate 12 random English words', function(done) {
     const mnemonic = Keystore.generateMnemonic()
     const mnemonicWithEntropy = Keystore.generateMnemonic(mnemonicEntropy)
-    const mnemonicWithBufferLength = Keystore.generateMnemonic(mnemonicEntropy, mnemonicBufferLength)
+
+    const mnemonicWithBufferLength = Keystore.generateMnemonic(
+      mnemonicEntropy,
+      mnemonicBufferLength,
+    )
 
     const words = mnemonic.toString().split(' ')
     const wordsWithEntropy = mnemonicWithEntropy.toString().split(' ')
@@ -83,12 +89,12 @@ describe('isBip32XPublicKeyValid', function() {
   })
 })
 
-describe('isValidAddress', function() {
+describe('isAddressValid', function() {
   it('should return true when address is correct', function(done) {
-    const isAddressValid1 = Keystore.isValidAddress(validAddress)
-    const isAddressValid2 = Keystore.isValidAddress(invalidChecksumAddress)
-    const isAddressValid3 = Keystore.isValidAddress(invalidAddress1)
-    const isAddressValid4 = Keystore.isValidAddress(invalidAddress2)
+    const isAddressValid1 = Keystore.isAddressValid(validAddress)
+    const isAddressValid2 = Keystore.isAddressValid(invalidChecksumAddress)
+    const isAddressValid3 = Keystore.isAddressValid(invalidAddress1)
+    const isAddressValid4 = Keystore.isAddressValid(invalidAddress2)
 
     isAddressValid1.should.be.a.Boolean()
     isAddressValid1.should.be.equal(true)
@@ -106,11 +112,11 @@ describe('isValidAddress', function() {
   })
 })
 
-describe('isValidPrivateKey', function() {
+describe('isPrivateKeyValid', function() {
   it('should return true when private key is correct', function(done) {
-    const isPrivateKeyValid1 = Keystore.isValidPrivateKey(validPrivateKey)
-    const isPrivateKeyValid2 = Keystore.isValidPrivateKey(invalidPrivateKey1)
-    const isPrivateKeyValid3 = Keystore.isValidPrivateKey(invalidPrivateKey2)
+    const isPrivateKeyValid1 = Keystore.isPrivateKeyValid(validPrivateKey)
+    const isPrivateKeyValid2 = Keystore.isPrivateKeyValid(invalidPrivateKey1)
+    const isPrivateKeyValid3 = Keystore.isPrivateKeyValid(invalidPrivateKey2)
 
     isPrivateKeyValid1.should.be.a.Boolean()
     isPrivateKeyValid1.should.be.equal(true)
@@ -144,7 +150,11 @@ describe('testPassword', function() {
   it('should return failed/passed tests count and errors if any', function(done) {
     const testValidPasswordResult = Keystore.testPassword(validPassword)
     const testInvalidPasswordResult = Keystore.testPassword(invalidPassword)
-    const testPasswordResultWithCustomConfig = Keystore.testPassword(validPassword, customPasswordConfig)
+
+    const testPasswordResultWithCustomConfig = Keystore.testPassword(
+      validPassword,
+      customPasswordConfig,
+    )
 
     testValidPasswordResult.should.be.an.Object()
     testValidPasswordResult.failedTests.should.be.an.Array()

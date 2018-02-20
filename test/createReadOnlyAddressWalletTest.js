@@ -3,7 +3,7 @@ const Keystore = require('../index')
 const keystore = new Keystore()
 
 const password = 'JHJ23jG^*DGHj667s'
-const walletName = 'address read only wallet'
+const name = 'address read only wallet'
 const walletIdLength = 36
 const addressLength = 42
 
@@ -19,8 +19,8 @@ describe('address read only wallet', function() {
 
   it('createWallet() should create wallet and return id of it', function(done) {
     walletId = keystore.createWallet({
+      name,
       password,
-      walletName,
       type: 'address',
       isReadOnly: true,
       address: privateKeyAddressPair.address,
@@ -53,8 +53,8 @@ describe('address read only wallet', function() {
   it('createWallet() should throw error (wallet with this name exists)', function(done) {
     try {
       keystore.createWallet({
+        name,
         password,
-        walletName,
         type: 'address',
         isReadOnly: true,
         address: privateKeyAddressPair.address,
@@ -99,7 +99,7 @@ describe('address read only wallet', function() {
       done(new Error('Exception not thrown'))
     } catch (e) {
       e.should.be.an.Object()
-      e.message.should.be.equal('Type of wallet not provided or incorrect')
+      e.message.should.be.equal('Type of wallet not provided or invalid')
 
       done()
     }
@@ -116,13 +116,13 @@ describe('address read only wallet', function() {
       done(new Error('Exception not thrown'))
     } catch (e) {
       e.should.be.an.Object()
-      e.message.should.be.equal('Type of wallet not provided or incorrect')
+      e.message.should.be.equal('Type of wallet not provided or invalid')
 
       done()
     }
   })
 
-  it('createWallet() should throw error (incorrect password)', function(done) {
+  it('createWallet() should throw error (invalid password)', function(done) {
     try {
       keystore.createWallet({
         isReadOnly: true,
@@ -133,17 +133,30 @@ describe('address read only wallet', function() {
       done(new Error('Exception not thrown'))
     } catch (e) {
       e.should.be.an.Object()
-      e.message.should.be.equal('Password is incorrect')
+      e.message.should.be.equal('The password must contain at least one uppercase letter')
+
+      done()
+    }
+  })
+
+  it('getMnemonic() should throw error (wrong type)', function(done) {
+    try {
+      keystore.getMnemonic(password, walletId)
+
+      done(new Error('Exception not thrown'))
+    } catch (e) {
+      e.should.be.an.Object()
+      e.message.should.be.equal('Wallet type is not mnemonic')
 
       done()
     }
   })
 
   it('getWallet() should return created wallet', function(done) {
-    const wallet = keystore.getWallet({ id: walletId })
+    const wallet = keystore.getWallet(walletId)
 
     wallet.id.should.be.equal(walletId)
-    wallet.walletName.should.be.equal(walletName)
+    wallet.name.should.be.equal(name)
     wallet.address.should.be.equal(privateKeyAddressPair.address)
     wallet.address.length.should.be.equal(addressLength)
 

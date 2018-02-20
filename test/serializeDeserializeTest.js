@@ -7,7 +7,7 @@ const keystore = new Keystore()
 
 const password = 'JHJ23jG^*DGHj667s'
 const bip32XPublicKey = 'xpub6DZVENYSZsMW1D48vLG924qPaxz83TZc43tK7zMbCdFcv1La9pqe6pBiuxdzDNjufXRW42CfJEK8indRdhfDoWvYfZDZS1xjkZrQB5iYtHy'
-const walletName = 'mnemonic read only wallet'
+const name = 'mnemonic read only wallet'
 const walletIdLength = 36
 const currentKeystoreVersion = packageData.version
 
@@ -19,8 +19,8 @@ describe('serialize / deserialize', function() {
 
   it('createWallet() should create example wallet', function(done) {
     walletId = keystore.createWallet({
+      name,
       password,
-      walletName,
       bip32XPublicKey,
       type: 'mnemonic',
       isReadOnly: true,
