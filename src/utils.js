@@ -6,15 +6,15 @@ const { Random } = require('bitcore-lib').crypto
 const ec = new EC('secp256k1')
 const HEX_PREFIX = /^0x/i
 
-function isValidAddress(address) {
-  return isNormalizedAddress(address) || isValidChecksumAddress(address)
+function isAddressValid(address) {
+  return isNormalizedAddress(address) || isChecksumAddressValid(address)
 }
 
 function isNormalizedAddress(address) {
   return (/^0x[0-9a-f]{40}$/.test(address) || /^0x[0-9A-F]{40}$/.test(address))
 }
 
-function isValidChecksumAddress(address) {
+function isChecksumAddressValid(address) {
   return (/^0x[0-9a-fA-F]{40}$/i.test(address) && getChecksum(address) === address)
 }
 
@@ -30,7 +30,7 @@ function getChecksum(address) {
   return add0x(checksum)
 }
 
-function isValidPrivateKey(privateKey) {
+function isPrivateKeyValid(privateKey) {
   return (/^0x[0-9a-fA-F]{64}$/i.test(privateKey))
 }
 
@@ -55,7 +55,7 @@ function getAddressFromKeyPair(keyPair) {
   const hash = cryptoJS.SHA3(publicKeyWordArray, { outputLength: 256 })
   const address = hash.toString(cryptoJS.enc.Hex).slice(24)
 
-  return add0x(address)
+  return getChecksum(address)
 }
 
 function deriveKeyFromPassword(password, scryptParams, derivedKeyLength, salt) {
@@ -93,8 +93,8 @@ function add0x(data) {
 }
 
 module.exports = {
-  isValidAddress,
-  isValidPrivateKey,
+  isAddressValid,
+  isPrivateKeyValid,
   getAddressFromPublicKey,
   getAddressFromPrivateKey,
   deriveKeyFromPassword,

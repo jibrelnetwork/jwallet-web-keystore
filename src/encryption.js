@@ -6,11 +6,11 @@ const { randomBytes, secretbox } = nacl
 function encryptData(props) {
   const { encryptionType, ...otherProps } = props
 
-  if (encryptionType === 'nacl.secretbox') {
-    return encryptNaclSecretbox(otherProps)
+  if (encryptionType !== 'nacl.secretbox') {
+    throw new Error(`Encryption type ${encryptionType} is not supported`)
   }
 
-  throw (new Error(`Encryption type ${encryptionType} is not supported`))
+  return encryptNaclSecretbox(otherProps)
 }
 
 function encryptNaclSecretbox(props) {
@@ -19,6 +19,10 @@ function encryptNaclSecretbox(props) {
   const nonce = getNonce()
   const dataToEncrypt = isPrivateKey ? decodePrivateKey(data) : util.decodeUTF8(data)
   const encryptedData = secretbox(dataToEncrypt, nonce, derivedKey)
+
+  if (encryptedData == null) {
+    throw new Error('Password is invalid')
+  }
 
   return encodeEncryptedData(encryptedData, nonce, 'nacl.secretbox')
 }
@@ -57,11 +61,11 @@ function encodePrivateKey(privateKey) {
 function decryptData(props) {
   const { encryptionType } = props.data
 
-  if (encryptionType === 'nacl.secretbox') {
-    return decryptNaclSecretbox(props)
+  if (encryptionType !== 'nacl.secretbox') {
+    throw new Error(`Decryption type ${encryptionType} is not supported`)
   }
 
-  throw (new Error(`Decryption type ${encryptionType} is not supported`))
+  return decryptNaclSecretbox(props)
 }
 
 function decryptNaclSecretbox(props) {
@@ -71,7 +75,7 @@ function decryptNaclSecretbox(props) {
   const decryptedData = secretbox.open(encryptedData, nonce, derivedKey)
 
   if (decryptedData == null) {
-    throw new Error('Decryption failed')
+    throw new Error('Password is invalid')
   }
 
   return isPrivateKey ? encodePrivateKey(decryptedData) : util.encodeUTF8(decryptedData)
