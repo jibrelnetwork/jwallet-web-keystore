@@ -205,26 +205,39 @@ class Keystore {
   }
 
   getDecryptedWallet(password, walletId) {
-    const { id, isReadOnly, type, name, address, salt, encrypted } = this.getWallet(walletId)
+    const {
+      id,
+      name,
+      salt,
+      type,
+      address,
+      encrypted,
+      isReadOnly,
+      customType,
+      bip32XPublicKey,
+    } = this.getWallet(walletId)
 
     const walletData = {
       id,
       name,
-      type,
+      type: customType,
       readOnly: isReadOnly ? 'yes' : 'no',
     }
 
-    if (isReadOnly) {
-      return walletData
-    }
-
     if (type === this.mnemonicType) {
-      return R.assoc('mnemonic', this._decryptData(encrypted.mnemonic, password, salt))(walletData)
+      return R.compose(
+        R.assoc('bip32XPublicKey', bip32XPublicKey)(walletData),
+        isReadOnly
+          ? R.identity
+          : R.assoc('mnemonic', this._decryptData(encrypted.mnemonic, password, salt))
+      )(walletData)
     }
 
     return R.compose(
       R.assoc('address', address),
-      R.assoc('privateKey', this._decryptPrivateKey(encrypted.privateKey, password, salt))
+      isReadOnly
+        ? R.identity
+        : R.assoc('privateKey', this._decryptPrivateKey(encrypted.privateKey, password, salt))
     )(walletData)
   }
 
