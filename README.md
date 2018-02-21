@@ -340,15 +340,11 @@ const keystoreSerializedData = keystore.serialize()
 | ---------- | ------ | ------------------------ |
 | backupData | String | Keystore serialized data |
 
-##### Returns
-
-Deserialized keystore data for restoring of backup.
-
 ##### Example
 
 ```javascript
 const backupData = '{"wallets":[{"type":"mnemonic","id":"2e820ddb-a9ce-43e1-b7ec-dbed59eec7e9",...'
-const keystoreDeserializedData = keystore.deserialize(backupData)
+keystore.deserialize(backupData)
 ```
 
 #### getDecryptedWallet(password, walletId)
