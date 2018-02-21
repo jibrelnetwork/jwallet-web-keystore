@@ -42,13 +42,13 @@ describe('serialize / deserialize', function() {
   })
 
   it('deserialize() should restore and return deserialized keystore data', function(done) {
-    const deserializedKeystoreData = keystore.deserialize(serializedKeystoreData)
+    keystore.deserialize(serializedKeystoreData)
 
-    deserializedKeystoreData.should.be.an.Object()
-    deserializedKeystoreData.wallets.should.be.an.Array()
-    deserializedKeystoreData.wallets[0].should.be.an.Object()
-    deserializedKeystoreData.wallets[0].id.should.be.equal(walletId)
-    deserializedKeystoreData.version.should.be.equal(currentKeystoreVersion)
+    keystore.getWallets().should.be.an.Array()
+    keystore.getWallets().length.should.be.greaterThanOrEqual(1)
+    keystore.getWallets()[0].should.be.an.Object()
+    keystore.getWallet(walletId).id.should.be.equal(walletId)
+    keystore.version.should.be.equal(currentKeystoreVersion)
 
     done()
   })
