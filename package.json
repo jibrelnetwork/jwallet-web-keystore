@@ -1,6 +1,6 @@
 {
   "name": "jwallet-web-keystore",
-  "version": "0.7.2",
+  "version": "0.7.3",
   "description": "Library for ethereum blockchain accounts management",
   "main": "index.js",
   "scripts": {
