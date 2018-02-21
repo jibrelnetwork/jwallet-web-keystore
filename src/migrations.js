@@ -7,20 +7,21 @@ const migrateTo070 = (backupData) => {
 
   const { wallets, accounts, salt } = backupData
 
-  const addSaltAndCustomTypeForWallets = (wallet) => {
-    const { type, isReadOnly } = wallet
+  const prepareWallet = (wallet) => {
+    const { accountName, type, isReadOnly } = wallet
 
     const mnemonicType = isReadOnly ? 'bip32Xpub' : 'mnemonic'
     const addressType = isReadOnly ? 'address' : 'privateKey'
     const customType = (type === 'mnemonic') ? mnemonicType : addressType
 
     return R.compose(
-      R.assoc('salt', salt),
-      R.assoc('customType', customType)
+      R.assoc('name', accountName),
+      R.assoc('customType', customType),
+      R.assoc('salt', isReadOnly ? null : salt)
     )(wallet)
   }
 
-  const newWallets = R.map(addSaltAndCustomTypeForWallets)(accounts)
+  const newWallets = R.map(prepareWallet)(accounts)
 
   return R.compose(
     R.assoc('version', '0.7.0'),
