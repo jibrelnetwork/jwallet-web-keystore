@@ -226,10 +226,10 @@ class Keystore {
 
     if (type === this.mnemonicType) {
       return R.compose(
-        R.assoc('bip32XPublicKey', bip32XPublicKey)(walletData),
+        R.assoc('bip32XPublicKey', bip32XPublicKey),
         isReadOnly
           ? R.identity
-          : R.assoc('mnemonic', this._decryptData(encrypted.mnemonic, password, salt))
+          : R.assoc('mnemonic', this._decryptData(encrypted.mnemonic, password, salt).trim())
       )(walletData)
     }
 
