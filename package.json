@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "lint": "./node_modules/.bin/eslint ./src",
-    "test": "./node_modules/.bin/mocha --compilers babel-register",
+    "test": "./node_modules/.bin/mocha --compilers babel-register --recursive",
     "clean": "rm -rf ./lib",
     "compile": "npm run clean && ./node_modules/.bin/babel ./src --out-dir ./lib",
     "build": "npm run lint && npm run compile && npm test",
