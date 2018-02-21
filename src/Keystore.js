@@ -253,8 +253,6 @@ class Keystore {
     try {
       const data = JSON.parse(backupData)
       this._restoreBackupData(data)
-
-      return data
     } catch (err) {
       throw new Error('Failed to parse backup data')
     }
