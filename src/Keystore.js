@@ -4,6 +4,7 @@ const bitcore = require('bitcore-lib')
 const Mnemonic = require('bitcore-mnemonic')
 
 const utils = require('./utils')
+const migrate = require('./migrations')
 const encryption = require('./encryption')
 const testPassword = require('./password')
 const { generateMnemonic, isMnemonicValid, isBip32XPublicKeyValid } = require('./mnemonic')
@@ -488,22 +489,20 @@ class Keystore {
   }
 
   _restoreBackupData(backupData) {
-    if (backupData.version <= packageData.version) {
-      const {
-        wallets,
-        defaultDerivationPath,
-        defaultEncryptionType,
-        scryptParams,
-        derivedKeyLength,
-      } = backupData
+    const {
+      wallets,
+      scryptParams,
+      derivedKeyLength,
+      defaultDerivationPath,
+      defaultEncryptionType,
+    } = migrate(backupData)
 
-      this.wallets = wallets || []
-      this.defaultDerivationPath = defaultDerivationPath || this.defaultDerivationPath
-      this.defaultEncryptionType = defaultEncryptionType || this.defaultEncryptionType
-      this.scryptParams = scryptParams || this.scryptParams
-      this.derivedKeyLength = derivedKeyLength || this.derivedKeyLength
-      this.version = packageData.version
-    }
+    this.wallets = wallets || []
+    this.defaultDerivationPath = defaultDerivationPath || this.defaultDerivationPath
+    this.defaultEncryptionType = defaultEncryptionType || this.defaultEncryptionType
+    this.scryptParams = scryptParams || this.scryptParams
+    this.derivedKeyLength = derivedKeyLength || this.derivedKeyLength
+    this.version = packageData.version
   }
 
   _isNotReadOnly(isReadOnly) {
