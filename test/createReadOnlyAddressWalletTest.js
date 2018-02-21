@@ -188,4 +188,17 @@ describe('address read only wallet', function() {
       done()
     }
   })
+
+  it('getDecryptedWallet() should return wallet data', function(done) {
+    const wallet = keystore.getDecryptedWallet(password, walletId)
+
+    wallet.should.be.an.Object()
+    wallet.name.should.be.equal(name)
+    wallet.id.should.be.equal(walletId)
+    wallet.readOnly.should.be.equal('yes')
+    wallet.type.should.be.equal('address')
+    wallet.address.should.be.equal(privateKeyAddressPair.address)
+
+    done()
+  })
 })

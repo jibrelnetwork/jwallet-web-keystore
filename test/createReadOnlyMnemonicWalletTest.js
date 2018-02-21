@@ -108,6 +108,19 @@ describe('mnemonic read only wallet', function() {
     }
   })
 
+  it('getDecryptedWallet() should return wallet data', function(done) {
+    const wallet = keystore.getDecryptedWallet(password, walletId)
+
+    wallet.should.be.an.Object()
+    wallet.name.should.be.equal(name)
+    wallet.id.should.be.equal(walletId)
+    wallet.readOnly.should.be.equal('yes')
+    wallet.type.should.be.equal('bip32Xpub')
+    wallet.bip32XPublicKey.should.be.equal(bip32XPublicKey)
+
+    done()
+  })
+
   it('removeWallet() should throw error (incorrect walletId)', function(done) {
     try {
       keystore.removeWallet(incorrectWalletId)

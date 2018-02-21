@@ -18,6 +18,7 @@ const mnemonicXPubPair = {
   mnemonic: 'sunny boil orient spawn edit voyage impose eager notice parent boat pudding',
   bip32XPublicKey: 'xpub6ENQhtq6UZ7CVznP3uC8mkb9FAfuMepKMdeaBiBoRZwUjZkoYgoXztnggqTfd7DkC8tTZsN5RSPh7Wme42PF8sSRSSCqqdg381zbu2QMEHc',
   bip32XPublicKeyCustomPath: 'xpub6EHUjFfkAkfqXkqkcZKNxa4Gx6ybxSfRFFeUYsBsqm2Eg2xrz7KWtAmW1pdJ6DNA852xkLtCPTbCinawRFm29WD4XLF8npKNQNpYa42cCwy',
+  bip32XPublicKeyCustomPath2: 'xpub6EzL2PV6NukMTntAULEUcdyNTzPvJDPFnog6p5fQek1ANmCm7sP1wJAFhFwBbxGESbzacQbivU97vGpuqzGrc3rVKSV8htoegG5TsrtNGUM',
 }
 
 let walletId
@@ -219,11 +220,25 @@ describe('mnemonic wallet', function() {
     done()
   })
 
-  it('getPrivateKey() should get private key by index', function(done) {
+  it('getPrivateKey() should get private key (with current index)', function(done) {
     const privateKey = keystore.getPrivateKey(password, walletId)
 
     privateKey.should.be.a.String()
     privateKey.length.should.be.equal(privateKeyLength)
+
+    done()
+  })
+
+  it('getDecryptedWallet() should get wallet data (with decrypted mnemonic)', function(done) {
+    const decryptedWallet = keystore.getDecryptedWallet(password, walletId)
+
+    decryptedWallet.should.be.an.Object()
+    decryptedWallet.name.should.be.equal(name)
+    decryptedWallet.id.should.be.equal(walletId)
+    decryptedWallet.readOnly.should.be.equal('no')
+    decryptedWallet.type.should.be.equal('mnemonic')
+    decryptedWallet.mnemonic.should.be.equal(mnemonicXPubPair.mnemonic)
+    decryptedWallet.bip32XPublicKey.should.be.equal(mnemonicXPubPair.bip32XPublicKeyCustomPath2)
 
     done()
   })

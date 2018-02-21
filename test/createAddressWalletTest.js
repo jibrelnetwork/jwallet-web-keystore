@@ -195,11 +195,15 @@ describe('address wallet', function() {
     done()
   })
 
-  it('getDecryptedWallet() should get current private key', function(done) {
+  it('getDecryptedWallet() should return wallet data (with decrypted private key)', function(done) {
     const decryptedWallet = keystore.getDecryptedWallet(newPassword, walletId)
 
     decryptedWallet.should.be.an.Object()
+    decryptedWallet.id.should.be.equal(walletId)
+    decryptedWallet.readOnly.should.be.equal('no')
+    decryptedWallet.type.should.be.equal('privateKey')
     decryptedWallet.name.should.be.equal(updatedWalletName)
+    decryptedWallet.address.should.be.equal(privateKeyAddressPair.address)
     decryptedWallet.privateKey.should.be.equal(privateKeyAddressPair.privateKey)
 
     done()
