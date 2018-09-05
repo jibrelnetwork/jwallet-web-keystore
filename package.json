@@ -5,12 +5,14 @@
   "main": "index.js",
   "scripts": {
     "lint": "./node_modules/.bin/eslint ./src",
+    "flow": "./node_modules/.bin/flow check",
     "test": "./node_modules/.bin/mocha --compilers babel-register --recursive",
     "clean": "rm -rf ./lib",
     "compile": "npm run clean && ./node_modules/.bin/babel ./src --out-dir ./lib",
     "build": "npm run lint && npm run compile && npm test",
-    "precommit": "./node_modules/.bin/lint-staged",
-    "prepush": "npm run build"
+    "precommit": "npm run flow && ./node_modules/.bin/lint-staged",
+    "prepush": "npm run build",
+    "postcheckout": "npm i"
   },
   "repository": {
     "type": "git",
@@ -64,9 +66,10 @@
     "babel-plugin-transform-object-rest-spread": "6.26.0",
     "babel-preset-es2015": "6.24.1",
     "babel-register": "6.26.0",
-    "eslint": "4.7.2",
-    "eslint-config-airbnb-base": "12.0.1",
+    "eslint": "4.18.2",
+    "eslint-config-jibrelnetwork": "1.0.3",
     "eslint-plugin-import": "2.7.0",
+    "flow-bin": "0.80.0",
     "husky": "0.14.3",
     "lint-staged": "6.1.1",
     "mocha": "3.5.3",
