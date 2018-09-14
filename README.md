@@ -15,7 +15,7 @@ Keystore can hold `read only` / `full access` wallets of two types:
 * `privateKey` / `address`
 * `mnemonic` / `bip32XPublicKey`
 
-Also Keystore API provides several [utility methods](#static-methods) for working with mnemonics / hashes / passwords.
+Also Keystore API provides several [utility methods](#utility-methods) for working with mnemonics / hashes / passwords.
 
 ## Get Started
 
@@ -24,9 +24,7 @@ npm install jwallet-web-keystore
 ```
 
 ```javascript
-const Keystore = require('jwallet-web-keystore')
-
-const keystore = new Keystore(props)
+import keystore from 'jwallet-web-keystore'
 ```
 
 ### Available npm scripts:
@@ -39,255 +37,235 @@ const keystore = new Keystore(props)
 
 ### Wallet properties
 
-| Property             | Type    | Description                                               |
-| -------------------- | ------- | --------------------------------------------------------- |
-| id                   | String  | Unique ID of wallet                                       |
-| type                 | String  | Type of wallet  (`mnemonic` / `address`)                  |
-| name                 | String  | Wallet name                                               |
-| salt                 | String  | Salt for enforcing of password                            |
-| address              | String  | Address of wallet                                         |
-| customType           | String  | User-friendly type of wallet                              |
-| isReadOnly           | Boolean | Read-only flag of wallet                                  |
-| addressIndex         | Number  | Current index of address of `mnemonic` wallet             |
-| derivationPath       | String  | Derivation path for generating of addresses from mnemonic |
-| bip32XPublicKey      | String  | BIP32 Extended Public Key                                 |
-| encrypted            | Object  | Container of encrypted data                               |
-| encrypted.privateKey | Object  | Encrypted private key                                     |
-| encrypted.mnemonic   | Object  | Encrypted mnemonic                                        |
+| Property             | Type    | Description                                                   |
+| -------------------- | ------- | ------------------------------------------------------------- |
+| id                   | String  | Unique ID of wallet                                           |
+| type                 | String  | Type of wallet  (`mnemonic` / `address`)                      |
+| name                 | String  | Wallet name                                                   |
+| salt                 | String  | Salt for enforcing of password                                |
+| address              | String  | Address of wallet                                             |
+| customType           | String  | User-friendly type of wallet                                  |
+| derivationPath       | String  | Path for derivation of keys from BIP32 Extended Key           |
+| encryptionType       | String  | Type of encryption                                            |
+| derivationPath       | String  | Derivation path for generating of addresses from mnemonic     |
+| bip32XPublicKey      | String  | BIP32 Extended Public Key                                     |
+| addressIndex         | Number  | Current index of address of `mnemonic` wallet                 |
+| saltBytesCount       | Number  | Number of bytes for `salt` parameter                          |
+| derivedKeyLength     | Number  | Size of derived from password key                             |
+| isReadOnly           | Boolean | Read-only flag of wallet                                      |
+| scryptParams         | Object  | Scrypt function params, that used for password key derivation |
+| scryptParams.N       | Number  | CPU/memory cost parameter                                     |
+| scryptParams.r       | Number  | The blocksize parameter                                       |
+| scryptParams.p       | Number  | Parallelization parameter                                     |
+| encrypted            | Object  | Container of encrypted data                                   |
+| encrypted.mnemonic   | Object  | Encrypted mnemonic                                            |
+| encrypted.privateKey | Object  | Encrypted private key                                         |
 
 **Notes:**
   * `isReadOnly` - flag means that wallet can be used only for balance / transactions checking
   * `bip32XPublicKey` - `xpub...` key that used for deriving of public keys (addresses)
+  * `encrypted data`(mnemonic/privateKey fields) - it is object, that looks like:
+```
+encrypted.mnemonic = {
+  data: base64 string (encrypted),
+  nonce: base64 string,
+}
+```
 
 ## Public API definitions
 
 See [mocha tests](https://github.com/jibrelnetwork/jwallet-web-keystore/tree/master/test) for examples of usage.
 
-### new Keystore(props)
+### Methods for wallets management
 
-Instantiates `Keystore` object with provided `props`.
-
-##### Parameters
-
-| Param                          | Type   | Default                    | Description                   |
-| ------------------------------ | ------ | -------------------------- | ----------------------------- |
-| props                          | Object | {}                         | Constructor properties        |
-| props.defaultDerivationPath    | String | "m/44'/60'/0'/0"           | Default derivation path for new `Mnemonic` wallets |
-| props.defaultEncryptionType    | String | 'nacl.secretbox'           | Default encryption type. Currently `nacl.secretbox` is only one supported |
-| props.paddedMnemonicLength     | Number | 120                        | Mnemonic will be padded left with this size before encryption |
-| props.saltByteCount            | Number | 32                         | Count of bytes of generated salt for password strength |
-| props.scryptParams             | Object | { N: 2 ** 18, r: 8, p: 1 } | Scrypt params for key deriving |
-| props.derivedKeyLength         | String | 32                         | Derived key length            |
-| props.passwordConfig           | Object | {}                         | Options to test password strength |
-
-##### Returns
-
-New instance of `Keystore` class.
-
-##### Example
-
-```javascript
-const keystore = new Keystore({ defaultDerivationPath: "m/44'/61'/0'/0" })
-```
-
-### Instance methods
-
-#### getWallets()
-
-##### Returns
-
-Wallets list presented in keystore.
-
-##### Example
-
-```javascript
-const wallets = keystore.getWallets()
-```
-
-#### getWallet(walletId)
+#### getWallet(wallets, walletId)
 
 ##### Parameters
 
-Wallet ID.
+| Param    | Type   | Description             |
+| -------- | ------ | ----------------------- |
+| wallets  | Array  | List of existed wallets |
+| walletId | String | Unique ID of wallet     |
 
 ##### Returns
 
-Wallet found by its ID.
+Wallet found by its ID, otherwise exception will be thrown.
 
 ##### Example
 
 ```javascript
-const wallet = keystore.getWallet('JHJ23jG^*DGHj667s')
+const wallets = keystore.createWallet(...)
+const wallet = keystore.getWallet(wallets, 'JHJ23jG^*DGHj667s')
 ```
 
-#### createWallet(props)
+#### createWallet(wallets, props, password)
 
 ##### Parameters
 
-wallet properties([Wallet properties](#wallet-properties)):
-* `type`
-* `name`
-* `address`
-* `mnemonic`
-* `isReadOnly`
-* `privateKey`
-* `derivationPath`
-* `bip32XPublicKey`
+| Param                                 | Type   | Description                                                                     |
+| ------------------------------------- | ------ | ------------------------------------------------------------------------------- |
+| wallets                               | Array  | List of existed wallets                                                         |
+| props                                 | Object | New wallet data                                                                 |
+| props.scryptParams (optional)         | Object | `scrypt` function params ([see wallet properties](#wallet-properties))          |
+| props.passwordConfig (optional)       | Object | `password` config ([see password config](#wallet-properties))                   |
+| props.data                            | String | main `wallet` data: address/privateKey/mnemonic/bip32XPublicKey                 |
+| props.name (optional)                 | String | name of new `wallet`                                                            |
+| props.derivationPath (optional)       | String | `derivation` path                                                               |
+| props.encryptionType (optional)       | String | `encryption` type                                                               |
+| props.saltBytesCount (optional)       | Number | size of `salt` for `password`                                                   |
+| props.derivedKeyLength (optional)     | Number | size of key, `derived` from `password` with `scrypt` function                   |
+| props.paddedMnemonicLength (optional) | Number | size of mnemonic phrase before encryption                                       |
+| password                              | String | `wallet` password. Used only for `full access` wallets: `mnemonic`/`privateKey` |
 
 ##### Returns
 
-Unique ID of created wallet
+List of wallets with new created one, otherwise exception will be thrown.
 
 ##### Example
 
 ```javascript
-const walletId = keystore.createWallet({
-  type: 'address',
-  name: 'My wallet',
-  isReadonly: false,
-  password: 'JHJ23jG^*DGHj667s',
-  privateKey: '0x8a02a99cc7a801da6996a2dacc406ffa5190dc9c8a02a99cc7a801da6996a2da',
-})
+const password = 'JHJ23jG^*DGHj667s'
+
+const walletsOne = keystore.createWallet(wallets, {
+  name: 'My privateKey wallet',
+  data: '0x8a02a99cc7a801da6996a2dacc406ffa5190dc9c8a02a99cc7a801da6996a2da',
+}, password)
+
+const walletsTwo = keystore.createWallet(walletsOne, {
+  name: 'My address wallet',
+  data: '0x8a02a99ee7a801da6996a2dacc406ffa5190dc9c',
+}, password)
+
+const walletsThree = keystore.createWallet(walletsTwo, {
+  name: 'My xpub wallet',
+  data: 'xpub...',
+}, password)
+
+const walletsFour = keystore.createWallet(walletsThree, {
+  name: 'My mnemonic wallet',
+  data: '<mnemonic phrase here>',
+}, password)
 ```
 
-#### removeWallet(walletId)
+#### removeWallet(wallets, walletId)
 
 ##### Parameters
 
-| Param    | Type   | Description         |
-| -------- | ------ | ------------------- |
-| walletId | String | Unique ID of wallet |
+| Param    | Type   | Description             |
+| -------- | ------ | ----------------------- |
+| wallets  | Array  | List of existed wallets |
+| walletId | String | Unique ID of wallet     |
 
 ##### Returns
 
-Removed wallet data.
+List of wallets without removed one, otherwise exception will be thrown.
 
 ##### Example
 
 ```javascript
-const removedWallet = keystore.removeWallet('110ec58a-a0f2-4ac4-8393-c977d813b8d1') // data
+const walletsNew = keystore.removeWallet(wallets, '110ec58a-a0f2-4ac4-8393-c977d813b8d1')
 ```
 
-#### removeWallets()
-
-##### Example
-
-```javascript
-keystore.removeWallets() // ok, wallets were removed
-```
-
-#### setWalletName(walletId, newName)
+#### setWalletName(wallets, walletId, name)
 
 ##### Parameters
 
-| Param    | Type   | Description         |
-| -------- | ------ | ------------------- |
-| walletId | String | Unique ID of wallet |
-| newName  | String | New wallet name     |
+| Param    | Type   | Description             |
+| -------- | ------ | ----------------------- |
+| wallets  | Array  | List of existed wallets |
+| walletId | String | Unique ID of wallet     |
+| name     | String | New wallet name         |
 
 ##### Returns
 
-Updated wallet.
+List of wallets with new updated one, otherwise exception will be thrown.
 
 ##### Example
 
 ```javascript
-const updatedWallet = keystore.setWalletName('110ec58a-a0f2-4ac4-8393-c977d813b8d1', 'New wallet name')
+const walletId = '110ec58a-a0f2-4ac4-8393-c977d813b8d1'
+const name = 'New wallet name'
+const walletsNew = keystore.setWalletName(wallets, walletId, name)
 ```
 
-#### getPrivateKey(password, walletId)
-
-##### Parameters
-
-| Param    | Type   | Description         |
-| -------- | ------ | ------------------- |
-| password | String | Wallet password     |
-| walletId | String | Unique ID of wallet |
-
-##### Returns
-
-Decrypted private key.
-
-##### Example
-
-```javascript
-const privateKey = keystore.getPrivateKey('JHJ23jG^*DGHj667s', '110ec58a-a0f2-4ac4-8393-c977d813b8d1')
-```
-
-#### setDerivationPath(password, walletId, newDerivationPath)
+#### setAddressIndex(wallets, walletId, addressIndex)
 
 **Note: used only for `mnemonic` wallets.**
 
 ##### Parameters
 
-| Param             | Type   | Description         |
-| ----------------- | ------ | ------------------- |
-| password          | String | Wallet password     |
-| walletId          | String | Unique ID of wallet |
-| newDerivationPath | String | New derivation path |
-
-**Note: default derivation path that will be assigned to all new created wallets can be managed by `defaultDerivationPath` constructor parameter.**
+| Param                   | Type   | Description                                                    |
+| ----------------------- | ------ | -------------------------------------------------------------- |
+| wallets                 | Array  | List of existed wallets                                        |
+| walletId                | String | Unique ID of wallet                                            |
+| addressIndex (optional) | Number | Index of address to derive from `mnemonic` / `bip32XPublicKey` |
 
 ##### Returns
 
-Updated wallet.
+List of wallets with new updated one, otherwise exception will be thrown.
 
 ##### Example
 
 ```javascript
-const updatedWallet = keystore.setDerivationPath('JHJ23jG^*DGHj667s', '110ec58a-a0f2-4ac4-8393-c977d813b8d1', "m/44'/61'/0'/0")
+const walletsNew = keystore.setAddressIndex(wallets, walletId, addressIndex)
 ```
 
-#### getMnemonic(password, walletId)
+#### setDerivationPath(wallets, walletId, password, derivationPath)
 
 **Note: used only for `mnemonic` wallets.**
 
 ##### Parameters
 
-| Param    | Type   | Description         |
-| -------- | ------ | ------------------- |
-| password | String | Wallet password     |
-| walletId | String | Unique ID of wallet |
+| Param          | Type   | Description             |
+| -------------- | ------ | ----------------------- |
+| wallets        | Array  | List of existed wallets |
+| walletId       | String | Unique ID of wallet     |
+| password       | String | Wallet password         |
+| derivationPath | String | New derivation path     |
 
 ##### Returns
 
-Decrypted mnemonic.
+List of wallets with new updated one, otherwise exception will be thrown.
 
 ##### Example
 
 ```javascript
-const mnemonic = keystore.getMnemonic('JHJ23jG^*DGHj667s', '110ec58a-a0f2-4ac4-8393-c977d813b8d1')
+const derivationPath = 'm/44\'/61\'/0\'/0'
+const walletsNew = keystore.setDerivationPath(wallets, walletId, password, derivationPath)
 ```
 
-#### getAddressesFromMnemonic(walletId, iteration, limit)
+#### setPassword(wallets, walletId, password, newPassword)
 
-**Note: used only for `mnemonic` wallets.**
+**Note: not available for `read-only` wallets.**
 
 ##### Parameters
 
-| Param     | Type   | Description                                                              |
-| --------- | ------ | ------------------------------------------------------------------------ |
-| walletId  | String | Unique ID of wallet                                                      |
-| iteration | Number | Iteration index (aka page for pagination) to generate bunch of addresses |
-| limit     | Number | Count of addresses to generate from mnemonic per one page / iteration    |
+| Param       | Type   | Description             |
+| ----------- | ------ | ----------------------- |
+| wallets     | Array  | List of existed wallets |
+| walletId    | String | Unique ID of wallet     |
+| password    | String | Wallet password         |
+| newPassword | String | New keystore password   |
 
 ##### Returns
 
-List of generated addresses.
+List of wallets with new updated one, otherwise exception will be thrown.
 
 ##### Example
 
 ```javascript
-const addresses = keystore.getAddressesFromMnemonic('110ec58a-a0f2-4ac4-8393-c977d813b8d1', 3, 10)
+const newPassword = 'Tw5E^g7djfd(29j'
+const walletsNew = keystore.setPassword(wallets, walletId, password, newPassword)
 ```
 
-#### getAddress(walletId, addressIndex)
+#### getAddress(wallets, walletId)
 
 ##### Parameters
 
-| Param    | Type   | Description         |
-| -------- | ------ | ------------------- |
-| walletId | String | Unique ID of wallet |
+| Param    | Type   | Description             |
+| -------- | ------ | ----------------------- |
+| wallets  | Array  | List of existed wallets |
+| walletId | String | Unique ID of wallet     |
 
 ##### Returns
 
@@ -296,28 +274,98 @@ Current address of wallet.
 ##### Example
 
 ```javascript
-const address = keystore.getAddress('110ec58a-a0f2-4ac4-8393-c977d813b8d1')
+const address = keystore.getAddress(wallets, walletId)
 ```
 
-#### setAddressIndex(walletId, addressIndex)
+#### getAddresses(wallets, walletId, startIndex, endIndex)
 
 **Note: used only for `mnemonic` wallets.**
 
 ##### Parameters
 
-| Param        | Type   | Description                                                    |
-| ------------ | ------ | -------------------------------------------------------------- |
-| walletId     | String | Unique ID of wallet                                            |
-| addressIndex | String | Index of address to derive from `mnemonic` / `bip32XPublicKey` |
+| Param        | Type   | Description                       |
+| ------------ | ------ | --------------------------------- |
+| wallets      | Array  | List of existed wallets           |
+| walletId     | String | Unique ID of wallet               |
+| startIndex   | Number | Start index of address to derive  |
+| endIndex     | Number | Finish index of address to derive |
 
 ##### Returns
 
-Updated wallet.
+List of derived addresses, otherwise exception will be thrown.
 
 ##### Example
 
 ```javascript
-const updatedWallet = keystore.setAddress('110ec58a-a0f2-4ac4-8393-c977d813b8d1', 5)
+const startIndex = 3
+const endIndex = 10
+const addresses = keystore.getAddressesFromMnemonic(wallets, walletId, startIndex, endIndex)
+```
+
+#### getPrivateKey(wallets, walletId, password)
+
+**Note: not available for `read-only` wallets.**
+
+##### Parameters
+
+| Param    | Type   | Description             |
+| -------- | ------ | ----------------------- |
+| wallets  | Array  | List of existed wallets |
+| walletId | String | Unique ID of wallet     |
+| password | String | Wallet password         |
+
+##### Returns
+
+Decrypted private key, otherwise exception will be thrown.
+
+##### Example
+
+```javascript
+const privateKey = keystore.getPrivateKey(wallets, walletId, password)
+```
+
+#### getMnemonic(wallets, walletId, password)
+
+**Note: used only for `full-access` `mnemonic` wallets.**
+
+##### Parameters
+
+| Param    | Type   | Description             |
+| -------- | ------ | ----------------------- |
+| wallets  | Array  | List of existed wallets |
+| walletId | String | Unique ID of wallet     |
+| password | String | Wallet password         |
+
+##### Returns
+
+Decrypted mnemonic, otherwise exception will be thrown.
+
+##### Example
+
+```javascript
+const mnemonic = keystore.getMnemonic(wallets, walletId, password)
+```
+
+#### getWalletData(wallets, walletId, password)
+
+**Note: password required only for `full-access` wallets.**
+
+##### Parameters
+
+| Param    | Type   | Description             |
+| -------- | ------ | ----------------------- |
+| wallets  | Array  | List of existed wallets |
+| walletId | String | Unique ID of wallet     |
+| password | String | Wallet password         |
+
+#### Returns
+
+Wallet with decrypted data, otherwise exception will be thrown.
+
+##### Example
+
+```javascript
+const walletData = keystore.getWalletData(wallets, walletId, password)
 ```
 
 #### serialize()
@@ -329,7 +377,7 @@ Serialized keystore data for backup.
 ##### Example
 
 ```javascript
-const keystoreSerializedData = keystore.serialize()
+const keystoreSerializedData = keystore.serialize(wallets)
 ```
 
 #### deserialize(backupData)
@@ -344,64 +392,52 @@ const keystoreSerializedData = keystore.serialize()
 
 ```javascript
 const backupData = '{"wallets":[{"type":"mnemonic","id":"2e820ddb-a9ce-43e1-b7ec-dbed59eec7e9",...'
-keystore.deserialize(backupData)
-```
-
-#### getDecryptedWallet(password, walletId)
-
-##### Parameters
-
-| Param    | Type   | Description         |
-| -------- | ------ | ------------------- |
-| password | String | Wallet password     |
-| walletId | String | Unique ID of wallet |
-
-#### Returns
-
-Wallet with decrypted data.
-
-##### Example
-
-```javascript
-const decryptedWallet = keystore.getDecryptedWallets('JHJ23jG^*DGHj667s', '110ec58a-a0f2-4ac4-8393-c977d813b8d1')
-```
-
-#### setPassword(password, newPassword, walletId)
-
-##### Parameters
-
-| Param       | Type   | Description           |
-| ----------- | ------ | --------------------- |
-| password    | String | Wallet password       |
-| newPassword | String | New keystore password |
-| walletId    | String | Unique ID of wallet   |
-
-##### Example
-
-```javascript
-keystore.setPassword('JHJ23jG^*DGHj667s', 'Tw5E^g7djfd(29j', '110ec58a-a0f2-4ac4-8393-c977d813b8d1')
+const keystoreDeserializedData = keystore.deserialize(backupData)
 ```
 
 ### Static methods
 
-#### generateMnemonic(entropy, randomBufferLength)
+#### testPassword(password, passwordConfig)
 
-| Param               | Type   | Description                                         |
-| ------------------- | ------ | --------------------------------------------------- |
-| entropy             | String | Entropy for mnemonic initialisation (see [new Mnemonic](https://bitcore.io/api/mnemonic#new_Mnemonic_new)) |
-| randomBufferLength  | Number | Buffer length (if `entropy` param is used) |
+| Param                               | Type   | Default | Description                |
+| ----------------------------------- | ------ | ------- | -------------------------- |
+| password                            | String |         | Wallet password            |
+| passwordConfig (optional)           | Object | {}      | Password options container |
+| passwordConfig.minLength (optional) | Number | 10      | Min length for password    |
+| passwordConfig.minLength (optional) | Number | 128     | Max length for password    |
 
 ##### Returns
 
-Mnemonic - 12 English words splited by space.
+Object that contains following fields:
+
+  * errors - error messages array
+  * failedTests - failed test names array
+  * passedTests - passed test names array
 
 ##### Example
 
 ```javascript
-const mnemonic = Keystore.generateMnemonic()
+const result = keystore.testPassword('JHJ23jG^*DGHj667s')
 ```
 
-#### isMnemonicValid(mnemonic)
+#### generateMnemonic(entropy, randomBufferLength)
+
+| Param                         | Type   | Description                                         |
+| ----------------------------- | ------ | --------------------------------------------------- |
+| entropy (optional)            | String | Entropy for mnemonic initialisation (see [new Mnemonic](https://bitcore.io/api/mnemonic#new_Mnemonic_new)) |
+| randomBufferLength (optional) | Number | Buffer length (if `entropy` param is used) |
+
+##### Returns
+
+Mnemonic - string with 12 English words splited by space.
+
+##### Example
+
+```javascript
+const mnemonic = keystore.generateMnemonic()
+```
+
+#### checkMnemonicValid(mnemonic)
 
 ##### Parameters
 
@@ -417,10 +453,10 @@ const mnemonic = Keystore.generateMnemonic()
 
 ```javascript
 const mnemonic = 'come average primary sunny profit eager toy pulp struggle hazard tourist round'
-const isValid = Keystore.isMnemonicValid(mnemonic) // true
+const isValid = keystore.checkMnemonicValid(mnemonic) // true
 ```
 
-#### isBip32XPublicKeyValid(bip32XPublicKey)
+#### checkBip32XPublicKeyValid(bip32XPublicKey)
 
 | Param           | Type   | Description               |
 | --------------- | ------ | ------------------------- |
@@ -433,10 +469,10 @@ const isValid = Keystore.isMnemonicValid(mnemonic) // true
 ##### Example
 
 ```javascript
-const isValid = Keystore.isBip32XPublicKeyValid('xpub...')
+const isValid = keystore.checkBip32XPublicKeyValid('xpub...')
 ```
 
-#### isAddressValid(address)
+#### checkAddressValid(address)
 
 | Param     | Type   | Description                                         |
 | --------- | ------ | --------------------------------------------------- |
@@ -449,10 +485,26 @@ const isValid = Keystore.isBip32XPublicKeyValid('xpub...')
 ##### Example
 
 ```javascript
-const isValid = Keystore.isAddressValid('0x8a02a99ee7a801da6996a2dacc406ffa5190dc9c')
+const isValid = keystore.checkAddressValid('0x8a02a99ee7a801da6996a2dacc406ffa5190dc9c')
 ```
 
-#### isPrivateKeyValid(privateKey)
+#### checkChecksumAddressValid(address)
+
+| Param     | Type   | Description      |
+| --------- | ------ | ---------------- |
+| address   | String | Address to check |
+
+##### Returns
+
+`true` if address contains checksum and `false` otherwise.
+
+##### Example
+
+```javascript
+const isValid = keystore.checkChecksumAddressValid('0x8a02a99ee7a801da6996a2dacc406ffa5190dc9c')
+```
+
+#### checkPrivateKeyValid(privateKey)
 
 | Param      | Type   | Description          |
 | ---------- | ------ | -------------------- |
@@ -466,10 +518,10 @@ const isValid = Keystore.isAddressValid('0x8a02a99ee7a801da6996a2dacc406ffa5190d
 
 ```javascript
 const pk = '0xa7fcb4efc392d2c8983cbfe64063f994f85120e60843407af95907d905d0dc9f'
-const isValid = Keystore.isPrivateKeyValid(pk)
+const isValid = keystore.checkPrivateKeyValid(pk)
 ```
 
-#### isDerivationPathValid(derivationPath)
+#### checkDerivationPathValid(derivationPath)
 
 | Param          | Type   | Description     |
 | -------------- | ------ | --------------- |
@@ -482,28 +534,5 @@ const isValid = Keystore.isPrivateKeyValid(pk)
 ##### Example
 
 ```javascript
-const isValid = Keystore.isDerivationPathValid("m/44'/60'/0'/0")
-```
-
-#### testPassword(password, passwordConfig)
-
-| Param                    | Type   | Default | Description                |
-| ------------------------ | ------ | ------- | -------------------------- |
-| password                 | String |         | Wallet password            |
-| passwordConfig           | Object | {}      | Password options container |
-| passwordConfig.minLength | Number | 10      | Min length for password    |
-| passwordConfig.minLength | Number | 128     | Max length for password    |
-
-##### Returns
-
-Object that contains following fields:
-
-  * errors - error messages array
-  * failedTests - failed test names array
-  * passedTests - passed test names array
-
-##### Example
-
-```javascript
-const result = Keystore.testPassword('JHJ23jG^*DGHj667s')
+const isValid = keystore.checkDerivationPathValid("m/44'/60'/0'/0")
 ```

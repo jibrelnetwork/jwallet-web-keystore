@@ -1,84 +1,117 @@
-const nacl = require('tweetnacl')
-const util = require('tweetnacl-util')
+// @flow
 
-const { randomBytes, secretbox } = nacl
+import nacl from 'tweetnacl'
+import util from 'tweetnacl-util'
 
-function encryptData(props) {
-  const { encryptionType, ...otherProps } = props
+type DecodedEncryptedData = {
+  +data: Uint8Array,
+  +nonce: Uint8Array,
+}
+
+type EncryptPayload = {
+  +data: string,
+  +derivedKey: Uint8Array,
+  +encryptionType: string,
+  +isPrivateKey: boolean,
+}
+
+type DecryptPayload = {
+  data: {
+    +data: string,
+    +nonce: string,
+  },
+  +derivedKey: Uint8Array,
+  +encryptionType: string,
+  +isPrivateKey: boolean,
+}
+
+function getNonce(nonceLength: number): Uint8Array {
+  return nacl.randomBytes(nonceLength)
+}
+
+function decodePrivateKey(privateKey: string): Uint8Array {
+  const privateKeyBase: string = (Buffer.from(privateKey)).toString('base64')
+
+  return util.decodeBase64(privateKeyBase)
+}
+
+function encodeEncryptedData(encryptedData: Uint8Array, nonce: Uint8Array): EncryptedData {
+  return {
+    nonce: util.encodeBase64(nonce),
+    data: util.encodeBase64(encryptedData),
+  }
+}
+
+function encryptNaclSecretbox(
+  data: string,
+  derivedKey: Uint8Array,
+  isPrivateKey: boolean,
+): EncryptedData {
+  const nonce: Uint8Array = getNonce(nacl.secretbox.nonceLength)
+  const dataToEncrypt: Uint8Array = isPrivateKey ? decodePrivateKey(data) : util.decodeUTF8(data)
+  const encryptedData: ?Uint8Array = nacl.secretbox(dataToEncrypt, nonce, derivedKey)
+
+  if ((encryptedData === null) || (encryptedData === undefined)) {
+    throw new Error('Password is invalid')
+  }
+
+  return encodeEncryptedData(encryptedData, nonce)
+}
+
+export function encryptData(payload: EncryptPayload): EncryptedData {
+  const {
+    data,
+    derivedKey,
+    encryptionType,
+    isPrivateKey,
+  } = payload
 
   if (encryptionType !== 'nacl.secretbox') {
     throw new Error(`Encryption type ${encryptionType} is not supported`)
   }
 
-  return encryptNaclSecretbox(otherProps)
+  return encryptNaclSecretbox(data, derivedKey, isPrivateKey)
 }
 
-function encryptNaclSecretbox(props) {
-  const { data, derivedKey, isPrivateKey } = props
-
-  const nonce = getNonce()
-  const dataToEncrypt = isPrivateKey ? decodePrivateKey(data) : util.decodeUTF8(data)
-  const encryptedData = secretbox(dataToEncrypt, nonce, derivedKey)
-
-  if (encryptedData == null) {
-    throw new Error('Password is invalid')
-  }
-
-  return encodeEncryptedData(encryptedData, nonce, 'nacl.secretbox')
-}
-
-function encodeEncryptedData(encryptedData, nonce, encryptionType) {
+function decodeEncryptedData(data: EncryptedData): DecodedEncryptedData {
   return {
-    encryptionType,
-    nonce: util.encodeBase64(nonce),
-    encryptedData: util.encodeBase64(encryptedData),
-  }
-}
-
-function decodeEncryptedData(data) {
-  return {
-    encryptedData: util.decodeBase64(data.encryptedData),
+    data: util.decodeBase64(data.data),
     nonce: util.decodeBase64(data.nonce),
   }
 }
 
-function getNonce() {
-  return randomBytes(secretbox.nonceLength)
+function encodePrivateKey(privateKey: Uint8Array): string {
+  const privateKeyBase: string = util.encodeBase64(privateKey)
+
+  return (Buffer.from(privateKeyBase, 'base64')).toString()
 }
 
-function decodePrivateKey(privateKey) {
-  const privateKeyBase64 = (Buffer.from(privateKey)).toString('base64')
+function decryptNaclSecretbox(
+  data: EncryptedData,
+  derivedKey: Uint8Array,
+  isPrivateKey: boolean,
+): string {
+  const decoded: DecodedEncryptedData = decodeEncryptedData(data)
+  const decryptedData: ?Uint8Array = nacl.secretbox.open(decoded.data, decoded.nonce, derivedKey)
 
-  return util.decodeBase64(privateKeyBase64)
-}
-
-function encodePrivateKey(privateKey) {
-  const privateKeyBase64 = util.encodeBase64(privateKey)
-
-  return (Buffer.from(privateKeyBase64, 'base64')).toString()
-}
-
-function decryptData(props) {
-  const { encryptionType } = props.data
-
-  if (encryptionType !== 'nacl.secretbox') {
-    throw new Error(`Decryption type ${encryptionType} is not supported`)
-  }
-
-  return decryptNaclSecretbox(props)
-}
-
-function decryptNaclSecretbox(props) {
-  const { data, derivedKey, isPrivateKey } = props
-
-  const { nonce, encryptedData } = decodeEncryptedData(data)
-  const decryptedData = secretbox.open(encryptedData, nonce, derivedKey)
-
-  if (decryptedData == null) {
+  if ((decryptedData === null) || (decryptedData === undefined)) {
     throw new Error('Password is invalid')
   }
 
   return isPrivateKey ? encodePrivateKey(decryptedData) : util.encodeUTF8(decryptedData)
 }
 
-module.exports = { encryptData, decryptData }
+export function decryptData(payload: DecryptPayload): string {
+  const {
+    data,
+    derivedKey,
+    encryptionType,
+    isPrivateKey,
+  } = payload
+
+  if (encryptionType !== 'nacl.secretbox') {
+    throw new Error(`Decryption type ${encryptionType} is not supported`)
+  }
+
+  return decryptNaclSecretbox(data, derivedKey, isPrivateKey)
+}

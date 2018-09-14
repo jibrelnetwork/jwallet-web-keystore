@@ -1,104 +1,120 @@
-const scrypt = require('scrypt.js')
-const cryptoJS = require('crypto-js')
-const EC = require('elliptic').ec
-const { Random } = require('bitcore-lib').crypto
+// @flow
 
-const ec = new EC('secp256k1')
-const HEX_PREFIX = /^0x/i
+import scrypt from 'scrypt.js'
+import cryptoJS from 'crypto-js'
+import { crypto } from 'bitcore-lib'
+import { ec as EC } from 'elliptic'
 
-function isAddressValid(address) {
-  return isNormalizedAddress(address) || isChecksumAddressValid(address)
+type KeyPair = {
+  getPublic: (boolean, 'hex') => string,
+  _importPrivate: (string, 'hex') => void,
 }
 
-function isNormalizedAddress(address) {
-  return (/^0x[0-9a-f]{40}$/.test(address) || /^0x[0-9A-F]{40}$/.test(address))
+/* eslint-disable no-use-before-define */
+type KeyWordArray = {
+  words: Array<number>,
+  sigBytes: number,
+  toString: (KeyWordArrayEncoder) => string,
 }
 
-function isChecksumAddressValid(address) {
-  return (/^0x[0-9a-fA-F]{40}$/i.test(address) && getChecksum(address) === address)
+type KeyWordArrayEncoder = {
+  parse: (string) => KeyWordArray,
+  stringify: (KeyWordArray) => string,
+}
+/* eslint-enable no-use-before-define */
+
+const RE_HEX_PREFIX: RegExp = /^0x/i
+const ENCODER: KeyWordArrayEncoder = cryptoJS.enc.Hex
+
+const ec: {
+  genKeyPair: () => KeyPair,
+  keyFromPublic: (string, 'hex') => KeyPair,
+} = new EC('secp256k1')
+
+function strip0x(data: string): string {
+  return data.replace(RE_HEX_PREFIX, '')
 }
 
-function getChecksum(address) {
-  const addressLowerCase = strip0x(address).toLowerCase()
-  const hash = cryptoJS.SHA3(addressLowerCase, { outputLength: 256 }).toString(cryptoJS.enc.Hex)
-
-  const checksum = addressLowerCase
-    .split('')
-    .map((symbol, index) => ((parseInt(hash[index], 16) >= 8) ? symbol.toUpperCase() : symbol))
-    .join('')
-
-  return add0x(checksum)
-}
-
-function isPrivateKeyValid(privateKey) {
-  return (/^0x[0-9a-fA-F]{64}$/i.test(privateKey))
-}
-
-function getAddressFromPublicKey(publicKey) {
-  const keyPair = ec.keyFromPublic(publicKey, 'hex')
-
-  return getAddressFromKeyPair(keyPair)
-}
-
-function getAddressFromPrivateKey(privateKey) {
-  const keyPair = ec.genKeyPair()
-  keyPair._importPrivate(strip0x(privateKey), 'hex')
-
-  return getAddressFromKeyPair(keyPair)
-}
-
-function getAddressFromKeyPair(keyPair) {
-  const compact = false
-
-  const publicKey = keyPair.getPublic(compact, 'hex').slice(2)
-  const publicKeyWordArray = cryptoJS.enc.Hex.parse(publicKey)
-  const hash = cryptoJS.SHA3(publicKeyWordArray, { outputLength: 256 })
-  const address = hash.toString(cryptoJS.enc.Hex).slice(24)
-
-  return getChecksum(address)
-}
-
-function deriveKeyFromPassword(password, scryptParams, derivedKeyLength, salt) {
-  const { N, r, p } = scryptParams
-  const derivedKey = scrypt(password, salt, N, r, p, derivedKeyLength)
-
-  return new Uint8Array(derivedKey)
-}
-
-function leftPadString(stringToPad, padChar, totalLength) {
-  const leftPadLength = totalLength - stringToPad.length
-  let leftPad = ''
-
-  for (let i = 0; i < leftPadLength; i += 1) {
-    leftPad += padChar
-  }
-
-  return `${leftPad}${stringToPad}`
-}
-
-function generateSalt(byteCount) {
-  return Random.getRandomBuffer(byteCount).toString('base64')
-}
-
-function strip0x(data) {
-  return data.replace(HEX_PREFIX, '')
-}
-
-function add0x(data) {
-  if (HEX_PREFIX.test(data)) {
+export function add0x(data: string): string {
+  if (RE_HEX_PREFIX.test(data)) {
     return data
   }
 
   return `0x${data}`
 }
 
-module.exports = {
-  isAddressValid,
-  isPrivateKeyValid,
-  getAddressFromPublicKey,
-  getAddressFromPrivateKey,
-  deriveKeyFromPassword,
-  leftPadString,
-  generateSalt,
-  add0x,
+function getChecksum(address: string): string {
+  const addressLowerCase: string = strip0x(address).toLowerCase()
+  const hash: string = cryptoJS.SHA3(addressLowerCase, { outputLength: 256 }).toString(ENCODER)
+
+  const checksum: string = addressLowerCase
+    .split('')
+    .map((symbol: string, index: number) => ((parseInt(hash[index], 16) >= 8)
+      ? symbol.toUpperCase()
+      : symbol)
+    )
+    .join('')
+
+  return add0x(checksum)
+}
+
+function checkNormalizedAddress(address: string): boolean {
+  return (/^0x[0-9a-f]{40}$/.test(address) || /^0x[0-9A-F]{40}$/.test(address))
+}
+
+export function checkChecksumAddressValid(address: string): boolean {
+  return (/^0x[0-9a-fA-F]{40}$/i.test(address) && getChecksum(address) === address)
+}
+
+export function checkAddressValid(address: string): boolean {
+  return checkNormalizedAddress(address) || checkChecksumAddressValid(address)
+}
+
+export function checkPrivateKeyValid(privateKey: string): boolean {
+  return (/^0x[0-9a-fA-F]{64}$/i.test(privateKey))
+}
+
+function getAddressFromKeyPair(keyPair: KeyPair): string {
+  const isCompact: boolean = false
+  const publicKey: string = keyPair.getPublic(isCompact, 'hex').slice(2)
+  const publicKeyWordArray: KeyWordArray = ENCODER.parse(publicKey)
+  const hash: KeyWordArray = cryptoJS.SHA3(publicKeyWordArray, { outputLength: 256 })
+  const address: string = hash.toString(ENCODER).slice(24)
+
+  return getChecksum(address)
+}
+
+export function getAddressFromPublicKey(publicKey: string): string {
+  const keyPair: KeyPair = ec.keyFromPublic(publicKey, 'hex')
+
+  return getAddressFromKeyPair(keyPair)
+}
+
+export function getAddressFromPrivateKey(privateKey: string): string {
+  const keyPair: KeyPair = ec.genKeyPair()
+  keyPair._importPrivate(strip0x(privateKey), 'hex')
+
+  return getAddressFromKeyPair(keyPair)
+}
+
+export function deriveKeyFromPassword(
+  password: string,
+  scryptParams: ScryptParams,
+  derivedKeyLength: number,
+  salt: string,
+): Uint8Array {
+  const { N, r, p } = scryptParams
+  const derivedKey: Buffer = scrypt(password, salt, N, r, p, derivedKeyLength)
+
+  return new Uint8Array(derivedKey)
+}
+
+export function leftPadString(stringToPad: string, padChar: string, totalLength: number) {
+  const leftPad: string = padChar.repeat(totalLength - stringToPad.length)
+
+  return `${leftPad}${stringToPad}`
+}
+
+export function generateSalt(byteCount: number): string {
+  return crypto.Random.getRandomBuffer(byteCount).toString('base64')
 }
