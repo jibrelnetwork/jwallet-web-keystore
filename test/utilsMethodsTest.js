@@ -27,10 +27,30 @@ const derivationPathInvalid = 'qwert'
 const password = 'qwe123RTY$%^'
 const passwordInvalid = '111111'
 
-const passwordTestsCount = 7
-const passwordConfigCustom = { minLength: 20 }
-
 const mnemonicWordsCount = 12
+
+describe('testPassword', () => {
+  it('should return failed/passed tests count and errors if any', (done) => {
+    const testPasswordResult = keystore.testPassword(password)
+    const testPasswordResultInvalid = keystore.testPassword(passwordInvalid)
+
+    testPasswordResult.should.be.an.Object()
+    testPasswordResult.score.should.be.equal(3)
+    testPasswordResult.feedback.warning.should.be.equal('')
+    testPasswordResult.feedback.suggestions.should.be.an.Array()
+    testPasswordResult.feedback.suggestions.length.should.be.equal(0)
+
+    testPasswordResultInvalid.should.be.an.Object()
+    testPasswordResultInvalid.score.should.be.equal(0)
+    testPasswordResultInvalid.feedback.suggestions.should.be.an.Array()
+    testPasswordResultInvalid.feedback.suggestions.length.should.be.greaterThan(0)
+    testPasswordResultInvalid.feedback.suggestions[0].should.be.a.String()
+    testPasswordResultInvalid.feedback.suggestions[0].length.should.be.greaterThan(0)
+    testPasswordResultInvalid.feedback.warning.should.be.equal('This is a top-10 common password')
+
+    done()
+  })
+})
 
 describe('generateMnemonic', () => {
   it('should generate 12 random English words', (done) => {
@@ -141,41 +161,6 @@ describe('checkDerivationPathValid', () => {
 
     isDerivationPathValidB.should.be.a.Boolean()
     isDerivationPathValidB.should.be.equal(false)
-
-    done()
-  })
-})
-
-describe('testPassword', () => {
-  it('should return failed/passed tests count and errors if any', (done) => {
-    const testPasswordResult = keystore.testPassword(password)
-    const testPasswordResultInvalid = keystore.testPassword(passwordInvalid)
-
-    const testPasswordResultWithCustomConfig = keystore.testPassword(
-      password,
-      passwordConfigCustom,
-    )
-
-    testPasswordResult.should.be.an.Object()
-    testPasswordResult.failedTests.should.be.an.Array()
-    testPasswordResult.failedTests.length.should.be.equal(0)
-    testPasswordResult.passedTests.should.be.an.Array()
-    testPasswordResult.passedTests.length.should.be.equal(passwordTestsCount)
-    testPasswordResult.errors.should.be.an.Array()
-    testPasswordResult.errors.length.should.be.equal(0)
-
-    testPasswordResultInvalid.should.be.an.Object()
-    testPasswordResultInvalid.failedTests.length.should.be.equal(5)
-    testPasswordResultInvalid.passedTests.length.should.be.equal(2)
-    testPasswordResultInvalid.errors.length.should.be.equal(5)
-
-    testPasswordResultWithCustomConfig.should.be.an.Object()
-    testPasswordResultWithCustomConfig.failedTests.length.should.be.equal(1)
-    testPasswordResultWithCustomConfig.passedTests.length.should.be.equal(6)
-    testPasswordResultWithCustomConfig.errors.length.should.be.equal(1)
-    testPasswordResultWithCustomConfig.errors[0].should.be.equal(
-      `The password must be at least ${passwordConfigCustom.minLength} characters long`
-    )
 
     done()
   })

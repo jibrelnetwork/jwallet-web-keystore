@@ -7,7 +7,7 @@ import keystore from '../lib'
 
 const password = 'JHJ23jG^*DGHj667s'
 const passwordNew = 'Tw5E^g7djfd(29j'
-const passwordWeak = 'some weak password'
+const passwordWeak = 'password'
 const name = 'address wallet'
 const walletNameUpdated = 'updated address wallet'
 const walletIdLength = 36
@@ -36,7 +36,7 @@ describe('address wallet', function createAddressWalletTest() {
       done(new Error('Exception not thrown'))
     } catch (e) {
       e.should.be.an.Object()
-      e.message.should.be.equal('The password must contain at least one uppercase letter')
+      e.message.should.be.equal('This is a top-10 common password')
 
       done()
     }

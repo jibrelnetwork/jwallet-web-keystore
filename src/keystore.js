@@ -11,26 +11,26 @@ import * as encryption from './encryption'
 
 import packageData from '../package.json'
 
-type HDPublicKey = {
+type HDPublicKey = {|
   +toString: () => string,
   +derive: (number) => HDPublicKey,
   +xpubkey: string,
-  +publicKey: {
+  +publicKey: {|
     +toString: () => string,
-  },
-}
+  |},
+|}
 
-type HDPrivateKey = {
+type HDPrivateKey = {|
   +toString: () => string,
   +isValidPath: (string) => boolean,
   +derive: (string | number) => HDPrivateKey,
   +xpubkey: string,
   +xprivkey: string,
   +hdPublicKey: HDPublicKey,
-  +privateKey: {
+  +privateKey: {|
     +toString: () => string,
-  },
-}
+  |},
+|}
 
 const DEFAULT_SCRYPT_PARAMS: ScryptParams = {
   N: 2 ** 18,
@@ -397,26 +397,20 @@ function _generateAddresses(bip32XPublicKey: string, start: ?number, end: ?numbe
     .map((currentIndex: number): string => _generateAddress(hdRoot, startIndex + currentIndex))
 }
 
-function _testPassword(
-  password: string,
-  passwordConfig?: {
-    +minLength?: number,
-    +maxLength?: number,
-  } | void,
-): void {
-  const testPasswordResult: PasswordResult = testPassword(password, passwordConfig)
+function _testPassword(password: string): void {
+  const testPasswordResult: PasswordResult = testPassword(password)
 
-  if (testPasswordResult.failedTests.length) {
-    throw new Error(testPasswordResult.errors[0])
+  if (testPasswordResult.score < 3) {
+    throw new Error(testPasswordResult.feedback.warning)
   }
 }
 
-function _getPasswordOptions(options: {
+function _getPasswordOptions(options: {|
   +scryptParams?: ScryptParams,
   +encryptionType?: string,
   +saltBytesCount?: number,
   +derivedKeyLength?: number,
-} | void): SetPasswordOptions {
+|} | void): SetPasswordOptions {
   const saltBytesCount: number = options
     ? options.saltBytesCount || DEFAULT_SALT_BYTES_COUNT
     : DEFAULT_SALT_BYTES_COUNT
@@ -451,13 +445,12 @@ function getWallet(wallets: Wallets, walletId: string): Wallet {
     throw new Error(`Wallet with id ${walletId} not found`)
   }
 
-  return Object.assign({}, wallet)
+  return { ...wallet }
 }
 
 function createWallet(wallets: Wallets, walletNewData: WalletNewData, password?: string): Wallets {
   const {
     scryptParams,
-    passwordConfig,
     data,
     name,
     derivationPath,
@@ -468,7 +461,7 @@ function createWallet(wallets: Wallets, walletNewData: WalletNewData, password?:
   } = walletNewData
 
   if (password) {
-    _testPassword(password, passwordConfig)
+    _testPassword(password)
   }
 
   if (name) {
@@ -528,7 +521,8 @@ function updateWallet(
 
   const wallet: Wallet = getWallet(wallets, walletId)
 
-  const newWallet: Wallet = Object.assign({}, wallet, {
+  const newWallet: Wallet = {
+    ...wallet,
     encrypted: encrypted || wallet.encrypted,
     scryptParams: scryptParams || wallet.scryptParams,
     name: name || wallet.name,
@@ -539,7 +533,7 @@ function updateWallet(
     addressIndex: addressIndex || wallet.addressIndex,
     saltBytesCount: saltBytesCount || wallet.saltBytesCount,
     derivedKeyLength: derivedKeyLength || wallet.derivedKeyLength,
-  })
+  }
 
   const newWallets: Wallets = removeWallet(wallets, walletId)
 
@@ -618,12 +612,12 @@ function setPassword(
   walletId: string,
   password: string,
   passwordNew: string,
-  passwordOptions?: {
+  passwordOptions?: {|
     scryptParams?: ScryptParams,
     encryptionType?: string,
     saltBytesCount?: number,
     derivedKeyLength?: number,
-  } | void,
+  |} | void,
 ): Wallets {
   const {
     salt,
@@ -655,12 +649,14 @@ function setPassword(
     const mnemonicDec: string = _decryptData(encrypted.mnemonic, dKey, encryptionType)
     const mnemonicEnc: EncryptedData = _encryptData(mnemonicDec, dKeyNew, options.encryptionType)
 
-    return updateWallet(wallets, walletId, Object.assign({}, options, {
-      encrypted: Object.assign({}, encrypted, {
+    return updateWallet(wallets, walletId, {
+      ...options,
+      encrypted: {
+        ...encrypted,
         mnemonic: mnemonicEnc,
         privateKey: null,
-      }),
-    }))
+      },
+    })
   } else {
     if (!encrypted.privateKey) {
       throw new Error('Data to decrypt not found')
@@ -669,12 +665,14 @@ function setPassword(
     const pKeyDec: string = _decryptPrivateKey(encrypted.privateKey, dKey, encryptionType)
     const pKeyEnc: EncryptedData = _encryptPrivateKey(pKeyDec, dKeyNew, options.encryptionType)
 
-    return updateWallet(wallets, walletId, Object.assign({}, options, {
-      encrypted: Object.assign({}, encrypted, {
+    return updateWallet(wallets, walletId, {
+      ...options,
+      encrypted: {
+        ...encrypted,
         privateKey: pKeyEnc,
         mnemonic: null,
-      }),
-    }))
+      },
+    })
   }
 }
 
@@ -804,9 +802,10 @@ function getWalletData(
 
   if (type === MNEMONIC_TYPE) {
     if (isReadOnly) {
-      return Object.assign({}, walletDecryptedData, {
+      return {
+        ...walletDecryptedData,
         bip32XPublicKey: bip32XPublicKey || walletDecryptedData.bip32XPublicKey,
-      })
+      }
     }
 
     if (!password) {
@@ -819,15 +818,17 @@ function getWalletData(
       throw new Error('Data to decrypt not found')
     }
 
-    return Object.assign({}, walletDecryptedData, {
+    return {
+      ...walletDecryptedData,
       bip32XPublicKey: bip32XPublicKey || walletDecryptedData.bip32XPublicKey,
       mnemonic: _decryptData(encrypted.mnemonic, dKey, encryptionType).trim(),
-    })
+    }
   } else {
     if (isReadOnly) {
-      return Object.assign({}, walletDecryptedData, {
+      return {
+        ...walletDecryptedData,
         address: address || walletDecryptedData.address,
-      })
+      }
     }
 
     if (!password) {
@@ -840,10 +841,11 @@ function getWalletData(
       throw new Error('Data to decrypt not found')
     }
 
-    return Object.assign({}, walletDecryptedData, {
+    return {
+      ...walletDecryptedData,
       address: address || walletDecryptedData.address,
       privateKey: _decryptPrivateKey(encrypted.privateKey, dKey, encryptionType),
-    })
+    }
   }
 }
 

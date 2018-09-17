@@ -5,31 +5,31 @@ import cryptoJS from 'crypto-js'
 import { crypto } from 'bitcore-lib'
 import { ec as EC } from 'elliptic'
 
-type KeyPair = {
+type KeyPair = {|
   getPublic: (boolean, 'hex') => string,
   _importPrivate: (string, 'hex') => void,
-}
+|}
 
 /* eslint-disable no-use-before-define */
-type KeyWordArray = {
+type KeyWordArray = {|
   words: Array<number>,
   sigBytes: number,
   toString: (KeyWordArrayEncoder) => string,
-}
+|}
 
-type KeyWordArrayEncoder = {
+type KeyWordArrayEncoder = {|
   parse: (string) => KeyWordArray,
   stringify: (KeyWordArray) => string,
-}
+|}
 /* eslint-enable no-use-before-define */
 
 const RE_HEX_PREFIX: RegExp = /^0x/i
 const ENCODER: KeyWordArrayEncoder = cryptoJS.enc.Hex
 
-const ec: {
+const ec: {|
   genKeyPair: () => KeyPair,
   keyFromPublic: (string, 'hex') => KeyPair,
-} = new EC('secp256k1')
+|} = new EC('secp256k1')
 
 function strip0x(data: string): string {
   return data.replace(RE_HEX_PREFIX, '')
