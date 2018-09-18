@@ -1,59 +1,79 @@
-const should = require('should')
+/* eslint-disable fp/no-mutating-assign */
 
-const packageData = require('../package.json')
+/* eslint-disable-next-line no-unused-vars */
+import should from 'should'
 
-const Keystore = require('../index')
-const keystore = new Keystore()
+import keystore from '../lib'
+import packageData from '../package.json'
 
-const password = 'JHJ23jG^*DGHj667s'
-const bip32XPublicKey = 'xpub6DZVENYSZsMW1D48vLG924qPaxz83TZc43tK7zMbCdFcv1La9pqe6pBiuxdzDNjufXRW42CfJEK8indRdhfDoWvYfZDZS1xjkZrQB5iYtHy'
 const name = 'mnemonic read only wallet'
 const walletIdLength = 36
 const currentKeystoreVersion = packageData.version
 
-let walletId
-let serializedKeystoreData
+/* eslint-disable-next-line max-len */
+const bip32XPublicKey = 'xpub6DZVENYSZsMW1D48vLG924qPaxz83TZc43tK7zMbCdFcv1La9pqe6pBiuxdzDNjufXRW42CfJEK8indRdhfDoWvYfZDZS1xjkZrQB5iYtHy'
 
-describe('serialize / deserialize', function() {
+const STORE = {
+  wallets: [],
+  serializedKeystoreData: null,
+}
+
+describe('serialize / deserialize', function serializeDeserializeTest() {
   this.timeout(20000)
 
-  it('createWallet() should create example wallet', function(done) {
-    walletId = keystore.createWallet({
+  it('createWallet() should create example wallet', (done) => {
+    const wallets = keystore.createWallet(STORE.wallets, {
       name,
-      password,
-      bip32XPublicKey,
-      type: 'mnemonic',
-      isReadOnly: true,
+      data: bip32XPublicKey,
     })
 
-    walletId.should.be.a.String()
-    walletId.length.should.be.equal(walletIdLength)
+    const wallet = wallets[0]
+
+    wallet.should.be.an.Object()
+    wallet.id.should.be.a.String()
+    wallet.name.should.be.equal(name)
+    wallet.id.length.should.be.equal(walletIdLength)
+    wallet.bip32XPublicKey.should.be.equal(bip32XPublicKey)
+
+    Object.assign(STORE, { wallets })
 
     done()
   })
 
-  it('serialize() should serialize keystore data', function(done) {
-    serializedKeystoreData = keystore.serialize()
+  it('serialize() should serialize keystore data', (done) => {
+    const serializedKeystoreData = keystore.serialize(STORE.wallets)
 
     serializedKeystoreData.should.be.a.String()
     serializedKeystoreData.length.should.be.greaterThan(0)
 
-    done()
-  })
-
-  it('deserialize() should restore and return deserialized keystore data', function(done) {
-    keystore.deserialize(serializedKeystoreData)
-
-    keystore.getWallets().should.be.an.Array()
-    keystore.getWallets().length.should.be.greaterThanOrEqual(1)
-    keystore.getWallets()[0].should.be.an.Object()
-    keystore.getWallet(walletId).id.should.be.equal(walletId)
-    keystore.version.should.be.equal(currentKeystoreVersion)
+    Object.assign(STORE, { serializedKeystoreData })
 
     done()
   })
 
-  it('deserialize() should throw error (parsing of data failed)', function(done) {
+  it('deserialize() should restore and return deserialized keystore data', (done) => {
+    const deserializedKeystoreData = keystore.deserialize(STORE.serializedKeystoreData)
+
+    deserializedKeystoreData.wallets.should.be.an.Array()
+
+    const { wallets } = deserializedKeystoreData
+
+    wallets.length.should.be.greaterThanOrEqual(1)
+
+    const wallet = wallets[0]
+
+    wallet.should.be.an.Object()
+
+    const walletFoundById = keystore.getWallet(wallets, wallet.id)
+
+    walletFoundById.id.should.be.equal(wallet.id)
+
+    deserializedKeystoreData.version.should.be.equal(currentKeystoreVersion)
+
+    done()
+  })
+
+  it('deserialize() should throw error (parsing of data failed)', (done) => {
     try {
       keystore.deserialize('#')
 
@@ -66,3 +86,5 @@ describe('serialize / deserialize', function() {
     }
   })
 })
+
+/* eslint-enable fp/no-mutating-assign */

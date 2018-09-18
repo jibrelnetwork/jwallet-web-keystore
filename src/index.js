@@ -1,3 +1,5 @@
-const Keystore = require('./Keystore')
+// @flow
 
-module.exports = Keystore
+import keystore from './keystore'
+
+export default keystore

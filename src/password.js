@@ -1,4 +1,15 @@
-function testPasswordMinLength(password, { minLength }) {
+// @flow
+
+type PasswordTestKey = 'minlen' | 'maxlen' | 'repeat' | 'lowerc' | 'upperc' | 'number' | 'specch'
+type PasswordTest = (string, PasswordConfig) => ?string
+type PasswordTests = { +[PasswordTestKey]: PasswordTest }
+
+const DEFAULT_CONFIG: PasswordConfig = {
+  minLength: 10,
+  maxLength: 128,
+}
+
+function testPasswordMinLength(password: string, { minLength }: PasswordConfig): ?string {
   if (password.length < minLength) {
     return `The password must be at least ${minLength} characters long`
   }
@@ -6,7 +17,7 @@ function testPasswordMinLength(password, { minLength }) {
   return null
 }
 
-function testPasswordMaxLength(password, { maxLength }) {
+function testPasswordMaxLength(password: string, { maxLength }: PasswordConfig): ?string {
   if (password.length > maxLength) {
     return `The password must be fewer than ${maxLength} characters long`
   }
@@ -14,7 +25,7 @@ function testPasswordMaxLength(password, { maxLength }) {
   return null
 }
 
-function testRepeatingCharacters(password) {
+function testRepeatingCharacters(password: string): ?string {
   if (/(.)\1{2,}/.test(password)) {
     return 'The password may not contain three or more repeating symbols'
   }
@@ -22,7 +33,7 @@ function testRepeatingCharacters(password) {
   return null
 }
 
-function testLowercaseLetter(password) {
+function testLowercaseLetter(password: string): ?string {
   if (!/[a-z]/.test(password)) {
     return 'The password must contain at least one lowercase letter'
   }
@@ -30,7 +41,7 @@ function testLowercaseLetter(password) {
   return null
 }
 
-function testUppercaseLetter(password) {
+function testUppercaseLetter(password: string): ?string {
   if (!/[A-Z]/.test(password)) {
     return 'The password must contain at least one uppercase letter'
   }
@@ -38,7 +49,7 @@ function testUppercaseLetter(password) {
   return null
 }
 
-function testNumber(password) {
+function testNumber(password: string): ?string {
   if (!/\d/.test(password)) {
     return 'The password must contain at least one number'
   }
@@ -46,7 +57,7 @@ function testNumber(password) {
   return null
 }
 
-function testSpecialCharacter(password) {
+function testSpecialCharacter(password: string): ?string {
   if (!/[^A-Za-z0-9]/.test(password)) {
     return 'The password must contain at least one special character'
   }
@@ -54,7 +65,7 @@ function testSpecialCharacter(password) {
   return null
 }
 
-const tests = {
+const TESTS: PasswordTests = {
   minlen: testPasswordMinLength,
   maxlen: testPasswordMaxLength,
   repeat: testRepeatingCharacters,
@@ -64,29 +75,38 @@ const tests = {
   specch: testSpecialCharacter,
 }
 
-const defaultConfig = { maxLength: 128, minLength: 10 }
+export function testPassword(
+  password: string,
+  config?: {
+    +minLength?: number,
+    +maxLength?: number,
+  },
+): PasswordResult {
+  return Object
+    .keys(TESTS)
+    .reduce((result: PasswordResult, test: PasswordTestKey): PasswordResult => {
+      const mergedConfig: PasswordConfig = config
+        ? Object.assign({}, DEFAULT_CONFIG, {
+          minLength: config.minLength || DEFAULT_CONFIG.minLength,
+          maxLength: config.maxLength || DEFAULT_CONFIG.maxLength,
+        })
+        : DEFAULT_CONFIG
 
-function testPassword(password, config = {}) {
-  const mergedConfig = { ...defaultConfig, ...config }
+      const testResult: ?string = TESTS[test](password, mergedConfig)
 
-  const result = {
-    errors: [],
-    failedTests: [],
-    passedTests: [],
-  }
+      if (!testResult) {
+        return Object.assign({}, result, {
+          passedTests: result.passedTests.concat(test),
+        })
+      }
 
-  Object.keys(tests).forEach((test) => {
-    const testResult = tests[test](password, mergedConfig)
-
-    if (!testResult) {
-      result.passedTests.push(test)
-    } else {
-      result.failedTests.push(test)
-      result.errors.push(testResult)
-    }
-  })
-
-  return result
+      return Object.assign({}, result, {
+        errors: result.errors.concat(testResult),
+        failedTests: result.failedTests.concat(test),
+      })
+    }, {
+      errors: [],
+      failedTests: [],
+      passedTests: [],
+    })
 }
-
-module.exports = testPassword

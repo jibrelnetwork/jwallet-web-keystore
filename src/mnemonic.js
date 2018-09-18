@@ -1,54 +1,59 @@
-const Mnemonic = require('bitcore-mnemonic')
-const bitcore = require('bitcore-lib')
+// @flow
 
-const { Random, Hash } = bitcore.crypto
+import Mnemonic from 'bitcore-mnemonic'
+import { crypto } from 'bitcore-lib'
 
-const BIP32_EXTENDABLE_PUBLIC_KEY_LENGTH = 111
+const DEFAULT_RANDOM_BUFFER_LENGTH: number = 32
+const BIP32_EXTENDABLE_PUBLIC_KEY_LENGTH: number = 111
+const ENGLISH_WORDS: Array<string> = Mnemonic.Words.ENGLISH
 
-function generateMnemonic(entropy, randomBufferLength) {
-  const dataList = Mnemonic.Words.ENGLISH
-  const hashedEntropy = getHashedEntropy(entropy, randomBufferLength)
+function concatEntropyBuffers(entropyBuffer: Buffer, randomBuffer: Buffer): Buffer {
+  const totalEntropy: Buffer = Buffer.concat([entropyBuffer, randomBuffer])
 
-  const mnemonic = hashedEntropy ? new Mnemonic(hashedEntropy, dataList) : new Mnemonic(dataList)
-
-  return mnemonic
-}
-
-function isMnemonicValid(mnemonic) {
-  return Mnemonic.isValid(mnemonic, Mnemonic.Words.ENGLISH)
-}
-
-function isBip32XPublicKeyValid(bip32XPublicKey) {
-  if (!bip32XPublicKey || (bip32XPublicKey.length !== BIP32_EXTENDABLE_PUBLIC_KEY_LENGTH)) {
-    return false
+  if (totalEntropy.length !== (entropyBuffer.length + randomBuffer.length)) {
+    throw new Error('Concatenation of entropy buffers failed.')
   }
 
-  const re = new RegExp(`^(xpub)([A-Z\\d]{${BIP32_EXTENDABLE_PUBLIC_KEY_LENGTH - 4}})$`, 'i')
-
-  return re.test(bip32XPublicKey)
+  return crypto.Hash.sha256(totalEntropy)
 }
 
-function getHashedEntropy(entropy, randomBufferLength) {
+function getHashedEntropy(entropy: ?string, randomBufferLength: number): ?Buffer {
   if (!entropy) {
     return null
   } else if (typeof entropy !== 'string') {
-    throw (new Error('Entropy is set but not a string.'))
+    throw new TypeError('Entropy is set but not a string.')
   }
 
-  const entropyBuffer = Buffer.from(entropy)
-  const randomBuffer = Random.getRandomBuffer(randomBufferLength)
+  const entropyBuffer: Buffer = Buffer.from(entropy)
+  const randomBuffer: Buffer = crypto.Random.getRandomBuffer(randomBufferLength)
 
   return concatEntropyBuffers(entropyBuffer, randomBuffer).slice(0, 16)
 }
 
-function concatEntropyBuffers(entropyBuffer, randomBuffer) {
-  const totalEntropy = Buffer.concat([entropyBuffer, randomBuffer])
+export function generateMnemonic(
+  entropy?: string,
+  randomBufferLength?: number = DEFAULT_RANDOM_BUFFER_LENGTH,
+): string {
+  const hashedEntropy: ?Buffer = getHashedEntropy(entropy, randomBufferLength)
 
-  if (totalEntropy.length !== entropyBuffer.length + randomBuffer.length) {
-    throw (new Error('Concatenation of entropy buffers failed.'))
-  }
+  const mnemonic = hashedEntropy
+    ? new Mnemonic(hashedEntropy, ENGLISH_WORDS)
+    : new Mnemonic(ENGLISH_WORDS)
 
-  return Hash.sha256(totalEntropy)
+  return mnemonic.toString()
 }
 
-module.exports = { generateMnemonic, isMnemonicValid, isBip32XPublicKeyValid }
+export function checkMnemonicValid(mnemonic: string): boolean {
+  return Mnemonic.isValid(mnemonic, ENGLISH_WORDS)
+}
+
+export function checkBip32XPublicKeyValid(bip32XPublicKey: string): boolean {
+  if (!bip32XPublicKey || (bip32XPublicKey.length !== BIP32_EXTENDABLE_PUBLIC_KEY_LENGTH)) {
+    return false
+  }
+
+  const reLengthWithoutXPUB: number = BIP32_EXTENDABLE_PUBLIC_KEY_LENGTH - 4
+  const re: RegExp = new RegExp(`^(xpub)([A-Z\\d]{${reLengthWithoutXPUB}})$`, 'i')
+
+  return re.test(bip32XPublicKey)
+}
