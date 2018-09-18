@@ -165,6 +165,56 @@ List of wallets without removed one, otherwise exception will be thrown.
 const walletsNew = keystore.removeWallet(wallets, '110ec58a-a0f2-4ac4-8393-c977d813b8d1')
 ```
 
+#### addMnemonic(wallets, walletId, mnemonic, password)
+
+**Note: used only for `read-only` `mnemonic` wallets.**
+
+This method is used to extend `bip32Xpub` wallet permissions (to make it full-access wallet).
+
+##### Parameters
+
+| Param    | Type   | Description                                                      |
+| -------- | ------ | ---------------------------------------------------------------- |
+| wallets  | Array  | List of existed wallets                                          |
+| walletId | String | Unique ID of wallet                                              |
+| mnemonic | String | New mnemonic for wallet (from which bip32XPublicKey was derived) |
+| password | String | New password for wallet                                          |
+
+##### Returns
+
+List of wallets with updated one, otherwise exception will be thrown.
+
+##### Example
+
+```javascript
+const walletsNew = keystore.addMnemonic(wallets, walletId, mnemonic, password)
+```
+
+#### addPrivateKey(wallets, walletId, privateKey, password)
+
+**Note: used only for `read-only` `address` wallets.**
+
+This method is used to extend `address` wallet permissions (to make it full-access wallet).
+
+##### Parameters
+
+| Param      | Type   | Description                                                 |
+| ---------- | ------ | ----------------------------------------------------------- |
+| wallets    | Array  | List of existed wallets                                     |
+| walletId   | String | Unique ID of wallet                                         |
+| privateKey | String | New privateKey for wallet (from which address was obtained) |
+| password   | String | New password for wallet                                     |
+
+##### Returns
+
+List of wallets with updated one, otherwise exception will be thrown.
+
+##### Example
+
+```javascript
+const walletsNew = keystore.addPrivateKey(wallets, walletId, privateKey, password)
+```
+
 #### setWalletName(wallets, walletId, name)
 
 ##### Parameters
