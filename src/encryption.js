@@ -3,27 +3,27 @@
 import nacl from 'tweetnacl'
 import util from 'tweetnacl-util'
 
-type DecodedEncryptedData = {
+type DecodedEncryptedData = {|
   +data: Uint8Array,
   +nonce: Uint8Array,
-}
+|}
 
-type EncryptPayload = {
+type EncryptPayload = {|
   +data: string,
   +derivedKey: Uint8Array,
   +encryptionType: string,
   +isPrivateKey: boolean,
-}
+|}
 
-type DecryptPayload = {
-  data: {
+type DecryptPayload = {|
+  data: {|
     +data: string,
     +nonce: string,
-  },
+  |},
   +derivedKey: Uint8Array,
   +encryptionType: string,
   +isPrivateKey: boolean,
-}
+|}
 
 function getNonce(nonceLength: number): Uint8Array {
   return nacl.randomBytes(nonceLength)

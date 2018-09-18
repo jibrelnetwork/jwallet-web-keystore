@@ -57,7 +57,8 @@
     "scrypt.js": "0.2.0",
     "tweetnacl": "1.0.0",
     "tweetnacl-util": "0.15.0",
-    "uuid": "3.1.0"
+    "uuid": "3.1.0",
+    "zxcvbn": "4.4.2"
   },
   "devDependencies": {
     "babel-cli": "6.26.0",

@@ -107,7 +107,6 @@ const wallet = keystore.getWallet(wallets, 'JHJ23jG^*DGHj667s')
 | wallets                               | Array  | List of existed wallets                                                         |
 | props                                 | Object | New wallet data                                                                 |
 | props.scryptParams (optional)         | Object | `scrypt` function params ([see wallet properties](#wallet-properties))          |
-| props.passwordConfig (optional)       | Object | `password` config ([see password config](#wallet-properties))                   |
 | props.data                            | String | main `wallet` data: address/privateKey/mnemonic/bip32XPublicKey                 |
 | props.name (optional)                 | String | name of new `wallet`                                                            |
 | props.derivationPath (optional)       | String | `derivation` path                                                               |
@@ -395,24 +394,22 @@ const backupData = '{"wallets":[{"type":"mnemonic","id":"2e820ddb-a9ce-43e1-b7ec
 const keystoreDeserializedData = keystore.deserialize(backupData)
 ```
 
-### Static methods
+### Utility methods
 
-#### testPassword(password, passwordConfig)
+#### testPassword(password)
 
-| Param                               | Type   | Default | Description                |
-| ----------------------------------- | ------ | ------- | -------------------------- |
-| password                            | String |         | Wallet password            |
-| passwordConfig (optional)           | Object | {}      | Password options container |
-| passwordConfig.minLength (optional) | Number | 10      | Min length for password    |
-| passwordConfig.minLength (optional) | Number | 128     | Max length for password    |
+| Param    | Type   | Description     |
+| -------- | ------ | --------------- |
+| password | String | Wallet password |
 
 ##### Returns
 
 Object that contains following fields:
 
-  * errors - error messages array
-  * failedTests - failed test names array
-  * passedTests - passed test names array
+  * score - estimated strength index
+  * feedback - verbal feedback to help choose better passwords. set when score < 3
+    * warning - explains what's wrong
+    * suggestions - a possibly-empty list of suggestions to help choose a less guessable password
 
 ##### Example
 
