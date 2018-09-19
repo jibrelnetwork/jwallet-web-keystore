@@ -27,6 +27,9 @@ describe('serialize / deserialize', function serializeDeserializeTest() {
       data: bip32XPublicKey,
     })
 
+    wallets.should.be.an.Array()
+    wallets.length.should.be.greaterThan(0)
+
     const wallet = wallets[0]
 
     wallet.should.be.an.Object()
@@ -58,7 +61,8 @@ describe('serialize / deserialize', function serializeDeserializeTest() {
 
     const { wallets } = deserializedKeystoreData
 
-    wallets.length.should.be.greaterThanOrEqual(1)
+    wallets.should.be.an.Array()
+    wallets.length.should.be.greaterThan(0)
 
     const wallet = wallets[0]
 

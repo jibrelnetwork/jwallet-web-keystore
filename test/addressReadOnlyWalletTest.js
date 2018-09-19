@@ -22,17 +22,31 @@ const STORE = {
 describe('address read only wallet', function createReadOnlyAddressWalletTest() {
   this.timeout(20000)
 
-  it('createWallet() should create wallet and return id of it', (done) => {
+  it('createWallet() should create wallet and return updated list with it', (done) => {
     const wallets = keystore.createWallet(STORE.wallets, {
       name,
       data: privateKeyAddressPair.address,
     })
 
+    wallets.should.be.an.Array()
+    wallets.length.should.be.greaterThan(0)
+
     const wallet = wallets[0]
 
+    wallet.should.be.an.Object()
     wallet.id.should.be.a.String()
     wallet.name.should.be.equal(name)
+    wallet.encrypted.should.be.an.Object()
+    wallet.type.should.be.equal('address')
+    wallet.isReadOnly.should.be.equal(true)
+    should(wallet.addressIndex).be.equal(null)
+    should(wallet.scryptParams).be.equal(null)
+    wallet.customType.should.be.equal('address')
+    should(wallet.derivationPath).be.equal(null)
+    should(wallet.bip32XPublicKey).be.equal(null)
     wallet.id.length.should.be.equal(walletIdLength)
+    should(wallet.encrypted.mnemonic).be.equal(null)
+    should(wallet.encrypted.privateKey).be.equal(null)
     wallet.address.should.be.equal(privateKeyAddressPair.address)
 
     Object.assign(STORE, { wallets })
@@ -161,6 +175,7 @@ describe('address read only wallet', function createReadOnlyAddressWalletTest() 
     const walletCreated = STORE.wallets[0]
     const wallet = keystore.getWallet(STORE.wallets, walletCreated.id)
 
+    wallet.should.be.an.Object()
     wallet.name.should.be.equal(name)
     wallet.id.should.be.equal(walletCreated.id)
     wallet.address.should.be.equal(privateKeyAddressPair.address)
@@ -203,11 +218,11 @@ describe('address read only wallet', function createReadOnlyAddressWalletTest() 
 
     walletData.should.be.an.Object()
     walletData.name.should.be.equal(name)
+    walletData.id.should.be.equal(wallet.id)
     walletData.readOnly.should.be.equal('yes')
     walletData.type.should.be.equal('address')
     walletData.mnemonic.should.be.equal('n/a')
     walletData.privateKey.should.be.equal('n/a')
-    walletData.id.should.be.equal(wallet.id)
     walletData.bip32XPublicKey.should.be.equal('n/a')
     walletData.address.should.be.equal(privateKeyAddressPair.address)
 

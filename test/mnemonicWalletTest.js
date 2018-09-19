@@ -45,19 +45,29 @@ describe('mnemonic wallet', function createMnemonicWalletTest() {
       data: mnemonicXPubPair.mnemonic,
     }, password)
 
+    wallets.should.be.an.Array()
+    wallets.length.should.be.greaterThan(0)
+
     // wallet with mnemonic
     const wallet = wallets[0]
 
     wallet.should.be.an.Object()
     wallet.id.should.be.a.String()
     wallet.name.should.be.equal(name)
-    wallet.id.length.should.be.equal(walletIdLength)
-
+    should(wallet.address).be.equal(null)
+    wallet.addressIndex.should.be.equal(0)
     wallet.encrypted.should.be.an.Object()
+    wallet.type.should.be.equal('mnemonic')
+    wallet.isReadOnly.should.be.equal(false)
+    wallet.scryptParams.should.be.an.Object()
+    wallet.derivationPath.should.be.a.String()
     should(wallet.encrypted.privateKey).be.null()
+    wallet.customType.should.be.equal('mnemonic')
     wallet.encrypted.mnemonic.should.be.an.Object()
+    wallet.id.length.should.be.equal(walletIdLength)
     wallet.encrypted.mnemonic.data.should.be.a.String()
     wallet.encrypted.mnemonic.data.length.should.be.greaterThan(0)
+    wallet.bip32XPublicKey.should.be.equal(mnemonicXPubPair.bip32XPublicKey)
 
     Object.assign(STORE, { wallets })
 
@@ -143,6 +153,7 @@ describe('mnemonic wallet', function createMnemonicWalletTest() {
     const mnemonic = keystore.getMnemonic(STORE.wallets, wallet.id, password)
     const words = mnemonic.split(' ')
 
+    words.should.be.an.Array()
     words.length.should.be.equal(mnemonicWordsCount)
     mnemonic.should.be.equal(mnemonicXPubPair.mnemonic)
 

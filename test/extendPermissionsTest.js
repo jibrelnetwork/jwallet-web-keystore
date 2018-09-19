@@ -36,6 +36,7 @@ describe('extend wallet permissions', function extendPermissionsTest() {
       })
 
       wallets.should.be.an.Array()
+      wallets.length.should.be.greaterThan(0)
 
       const wallet = wallets[0]
 
@@ -94,6 +95,7 @@ describe('extend wallet permissions', function extendPermissionsTest() {
       })
 
       wallets.should.be.an.Array()
+      wallets.length.should.be.greaterThan(0)
 
       const wallet = wallets[0]
 
