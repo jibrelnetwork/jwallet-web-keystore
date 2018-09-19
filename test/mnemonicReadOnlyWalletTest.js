@@ -26,11 +26,14 @@ const STORE = {
 describe('mnemonic read only wallet', function createReadOnlyMnemonicWalletTest() {
   this.timeout(20000)
 
-  it('createWallet() should create wallet and return id of it', (done) => {
+  it('createWallet() should create wallet and return updated list with it', (done) => {
     const wallets = keystore.createWallet(STORE.wallets, {
       name,
       data: bip32XPublicKey,
     })
+
+    wallets.should.be.an.Array()
+    wallets.length.should.be.greaterThan(0)
 
     // wallet with xpub
     const wallet = wallets[0]
@@ -38,7 +41,17 @@ describe('mnemonic read only wallet', function createReadOnlyMnemonicWalletTest(
     wallet.should.be.an.Object()
     wallet.id.should.be.a.String()
     wallet.name.should.be.equal(name)
+    should(wallet.address).be.equal(null)
+    wallet.addressIndex.should.be.equal(0)
+    wallet.encrypted.should.be.an.Object()
+    wallet.type.should.be.equal('mnemonic')
+    wallet.isReadOnly.should.be.equal(true)
+    should(wallet.scryptParams).be.equal(null)
+    should(wallet.derivationPath).be.equal(null)
+    wallet.customType.should.be.equal('bip32Xpub')
     wallet.id.length.should.be.equal(walletIdLength)
+    should(wallet.encrypted.mnemonic).be.equal(null)
+    should(wallet.encrypted.privateKey).be.equal(null)
     wallet.bip32XPublicKey.should.be.equal(bip32XPublicKey)
 
     Object.assign(STORE, { wallets })

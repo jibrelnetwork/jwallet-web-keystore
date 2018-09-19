@@ -42,24 +42,34 @@ describe('address wallet', function createAddressWalletTest() {
     }
   })
 
-  it('createWallet() should create wallet and return id of it', (done) => {
+  it('createWallet() should create wallet and return updated list with it', (done) => {
     // wallet with privateKey
     const wallets = keystore.createWallet(STORE.wallets, {
       name,
       data: privateKeyAddressPair.privateKey,
     }, password)
 
+    wallets.should.be.an.Array()
+    wallets.length.should.be.greaterThan(0)
+
     const wallet = wallets[0]
 
     wallet.should.be.an.Object()
     wallet.id.should.be.a.String()
     wallet.name.should.be.equal(name)
-    wallet.id.length.should.be.equal(walletIdLength)
-
     wallet.encrypted.should.be.an.Object()
-    should(wallet.encrypted.mnemonic).be.null()
+    wallet.type.should.be.equal('address')
+    wallet.isReadOnly.should.be.equal(false)
+    should(wallet.addressIndex).be.equal(null)
+    should(wallet.scryptParams).be.an.Object()
+    should(wallet.derivationPath).be.equal(null)
+    should(wallet.bip32XPublicKey).be.equal(null)
+    wallet.customType.should.be.equal('privateKey')
+    wallet.id.length.should.be.equal(walletIdLength)
+    should(wallet.encrypted.mnemonic).be.equal(null)
     wallet.encrypted.privateKey.should.be.an.Object()
     wallet.encrypted.privateKey.data.should.be.a.String()
+    wallet.address.should.be.equal(privateKeyAddressPair.address)
     wallet.encrypted.privateKey.data.length.should.be.greaterThan(0)
 
     Object.assign(STORE, { wallets })
@@ -181,6 +191,7 @@ describe('address wallet', function createAddressWalletTest() {
     const wallet = STORE.wallets[1]
     const walletFoundById = keystore.getWallet(STORE.wallets, wallet.id)
 
+    walletFoundById.should.be.an.Object()
     walletFoundById.id.should.be.equal(wallet.id)
     walletFoundById.name.should.be.equal(walletNameUpdated)
 
@@ -201,6 +212,20 @@ describe('address wallet', function createAddressWalletTest() {
     // wallet with privateKey
     const wallet = STORE.wallets[1]
     const wallets = keystore.setPassword(STORE.wallets, wallet.id, password, passwordNew)
+
+    wallets.should.be.an.Array()
+    wallets.length.should.be.greaterThan(0)
+
+    const walletUpdated = wallets[0]
+
+    walletUpdated.should.be.an.Object()
+    wallet.encrypted.should.be.an.Object()
+    walletUpdated.encrypted.should.be.an.Object()
+    wallet.encrypted.privateKey.should.be.an.Object()
+    wallet.encrypted.privateKey.data.should.be.a.String()
+    walletUpdated.encrypted.privateKey.should.be.an.Object()
+    walletUpdated.encrypted.privateKey.data.should.be.a.String()
+    walletUpdated.encrypted.privateKey.data.should.not.be.equal(wallet.encrypted.privateKey.data)
 
     Object.assign(STORE, { wallets })
 

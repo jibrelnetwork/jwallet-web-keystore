@@ -35,9 +35,11 @@ declare type WalletUpdatedData = {|
   +derivationPath?: ?string,
   +encryptionType?: ?string,
   +bip32XPublicKey?: ?string,
+  +customType?: ?WalletCustomType,
   +addressIndex?: ?number,
   +saltBytesCount?: ?number,
   +derivedKeyLength?: ?number,
+  +isReadOnly?: ?boolean,
 |}
 
 declare type WalletNewData = {|

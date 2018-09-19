@@ -59,7 +59,10 @@ function getChecksum(address: string): string {
 }
 
 function checkNormalizedAddress(address: string): boolean {
-  return (/^0x[0-9a-f]{40}$/.test(address) || /^0x[0-9A-F]{40}$/.test(address))
+  const isAddressLowerCase: boolean = /^0x[0-9a-f]{40}$/.test(address)
+  const isAddressUpperCase: boolean = /^0x[0-9A-F]{40}$/.test(address)
+
+  return (isAddressLowerCase || isAddressUpperCase)
 }
 
 export function checkChecksumAddressValid(address: string): boolean {

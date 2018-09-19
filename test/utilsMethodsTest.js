@@ -29,8 +29,8 @@ const passwordInvalid = '111111'
 
 const mnemonicWordsCount = 12
 
-describe('testPassword', () => {
-  it('should return failed/passed tests count and errors if any', (done) => {
+describe('utils methods test', () => {
+  it('testPassword() should return failed/passed tests count and errors if any', (done) => {
     const testPasswordResult = keystore.testPassword(password)
     const testPasswordResultInvalid = keystore.testPassword(passwordInvalid)
 
@@ -50,10 +50,8 @@ describe('testPassword', () => {
 
     done()
   })
-})
 
-describe('generateMnemonic', () => {
-  it('should generate 12 random English words', (done) => {
+  it('generateMnemonic() should generate 12 random English words', (done) => {
     const mnemonicGenerated = keystore.generateMnemonic()
     const mnemonicWithEntropy = keystore.generateMnemonic(mnemonicEntropy)
 
@@ -77,10 +75,8 @@ describe('generateMnemonic', () => {
 
     done()
   })
-})
 
-describe('checkMnemonicValid', () => {
-  it('should return true when Mnemonic is valid', (done) => {
+  it('checkMnemonicValid() should return true when Mnemonic is valid', (done) => {
     const isMnemonicValidA = keystore.checkMnemonicValid(mnemonic)
     const isMnemonicValidB = keystore.checkMnemonicValid(mnemonicInvalid)
 
@@ -92,10 +88,8 @@ describe('checkMnemonicValid', () => {
 
     done()
   })
-})
 
-describe('checkBip32XPublicKeyValid', () => {
-  it('should return true when xpub key is valid', (done) => {
+  it('checkBip32XPublicKeyValid() should return true when xpub key is valid', (done) => {
     const isXPubValidA = keystore.checkBip32XPublicKeyValid(bip32XPubKey)
     const isXPubValidB = keystore.checkBip32XPublicKeyValid(bip32XPubKeyInvalid)
 
@@ -107,10 +101,8 @@ describe('checkBip32XPublicKeyValid', () => {
 
     done()
   })
-})
 
-describe('checkAddressValid', () => {
-  it('should return true when address is correct', (done) => {
+  it('checkAddressValid() should return true when address is correct', (done) => {
     const isAddressValidA = keystore.checkAddressValid(address)
     const isAddressValidB = keystore.checkAddressValid(addressChecksum)
     const isAddressValidC = keystore.checkAddressValid(addressInvalidA)
@@ -130,10 +122,8 @@ describe('checkAddressValid', () => {
 
     done()
   })
-})
 
-describe('checkPrivateKeyValid', () => {
-  it('should return true when private key is correct', (done) => {
+  it('checkPrivateKeyValid() should return true when private key is correct', (done) => {
     const isPrivateKeyValidA = keystore.checkPrivateKeyValid(privateKey)
     const isPrivateKeyValidB = keystore.checkPrivateKeyValid(privateKeyInvalidA)
     const isPrivateKeyValidC = keystore.checkPrivateKeyValid(privateKeyInvalidB)
@@ -149,10 +139,8 @@ describe('checkPrivateKeyValid', () => {
 
     done()
   })
-})
 
-describe('checkDerivationPathValid', () => {
-  it('should return true when xpub key is valid', (done) => {
+  it('checkDerivationPathValid() should return true when xpub key is valid', (done) => {
     const isDerivationPathValidA = keystore.checkDerivationPathValid(derivationPath)
     const isDerivationPathValidB = keystore.checkDerivationPathValid(derivationPathInvalid)
 
