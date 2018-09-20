@@ -1,52 +1,73 @@
 declare type Address = string
 declare type Addresses = Array<Address>
 
+declare type Network = string | number | void
+
 declare type WalletType = 'address' | 'mnemonic'
 declare type WalletCustomType = WalletType | 'bip32Xpub' | 'privateKey'
+
+type EncryptedData = {|
+  +data: string,
+  +nonce: string,
+|}
 
 declare type WalletEncryptedData = {|
   +mnemonic: ?EncryptedData,
   +privateKey: ?EncryptedData,
 |}
 
+declare type ScryptParams = {|
+  +N: number,
+  +r: number,
+  +p: number,
+|}
+
+declare type PasswordOptions = {|
+  scryptParams: ScryptParams,
+  salt: string,
+  encryptionType: string,
+  saltBytesCount: number,
+  derivedKeyLength: number,
+|}
+
+declare type MnemonicOptions = {|
+  network: Network,
+  passphrase: string,
+  derivationPath: string,
+  paddedMnemonicLength: number,
+|}
+
 declare type Wallet = {|
-  +scryptParams: ?ScryptParams,
+  +passwordOptions: ?PasswordOptions,
+  +mnemonicOptions: ?MnemonicOptions,
   +encrypted: WalletEncryptedData,
   +id: string,
   +name: string,
-  +salt: ?string,
   +type: WalletType,
   +address: ?string,
-  +derivationPath: ?string,
-  +encryptionType: ?string,
   +bip32XPublicKey: ?string,
   +customType: WalletCustomType,
   +addressIndex: ?number,
-  +saltBytesCount: ?number,
-  +derivedKeyLength: ?number,
   +isReadOnly: boolean,
 |}
 
 declare type WalletUpdatedData = {|
+  +passwordOptions?: PasswordOptions,
+  +mnemonicOptions?: MnemonicOptions,
   +encrypted?: WalletEncryptedData,
-  +scryptParams?: ?ScryptParams,
   +name?: string,
-  +salt?: ?string,
-  +derivationPath?: ?string,
-  +encryptionType?: ?string,
   +bip32XPublicKey?: ?string,
   +customType?: ?WalletCustomType,
   +addressIndex?: ?number,
-  +saltBytesCount?: ?number,
-  +derivedKeyLength?: ?number,
   +isReadOnly?: ?boolean,
 |}
 
 declare type WalletNewData = {|
   +scryptParams?: ScryptParams,
   +data: string,
-  +name: string,
-  +password: string,
+  +name?: string,
+  +network?: Network,
+  +passphrase?: string,
   +derivationPath?: string,
   +encryptionType?: string,
   +saltBytesCount?: number,
@@ -55,15 +76,11 @@ declare type WalletNewData = {|
 |}
 
 declare type WalletData = {|
-  +scryptParams: ScryptParams,
+  +passwordOptions: PasswordOptions,
+  +mnemonicOptions: MnemonicOptions,
   +id: string,
   +data: string,
   +name: string,
-  +derivationPath: string,
-  +encryptionType: string,
-  +saltBytesCount: number,
-  +derivedKeyLength: number,
-  +paddedMnemonicLength: number,
 |}
 
 declare type WalletDecryptedData = {|
@@ -90,23 +107,4 @@ declare type PasswordResult = {|
     +warning: string,
     +suggestions: Array<string>,
   |},
-|}
-
-declare type SetPasswordOptions = {|
-  scryptParams: ScryptParams,
-  salt: string,
-  encryptionType: string,
-  saltBytesCount: number,
-  derivedKeyLength: number,
-|}
-
-declare type ScryptParams = {|
-  +N: number,
-  +r: number,
-  +p: number,
-|}
-
-type EncryptedData = {|
-  +data: string,
-  +nonce: string,
 |}

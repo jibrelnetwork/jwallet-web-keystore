@@ -40,13 +40,10 @@ type PasswordOptionsUser = {|
 |}
 
 type MnemonicOptionsUser = {|
+  network?: ?Network,
+  passphrase?: ?string,
   derivationPath?: string,
   paddedMnemonicLength?: number,
-|}
-
-type MnemonicOptions = {|
-  derivationPath: string,
-  paddedMnemonicLength: number,
 |}
 
 const DEFAULT_SCRYPT_PARAMS: ScryptParams = {
@@ -55,9 +52,10 @@ const DEFAULT_SCRYPT_PARAMS: ScryptParams = {
   p: 1,
 }
 
+const DEFAULT_NETWORK: string = 'livenet'
 const ADDRESS_TYPE: 'address' = 'address'
 const MNEMONIC_TYPE: 'mnemonic' = 'mnemonic'
-const CURRENT_VERSION = packageData.version
+const CURRENT_VERSION: string = packageData.version
 const DEFAULT_ENCRYPTION_TYPE: string = 'nacl.secretbox'
 const DEFAULT_DERIVATION_PATH: string = 'm/44\'/60\'/0\'/0'
 const PADDED_MNEMONIC_LENGTH: number = 120
@@ -108,15 +106,59 @@ function _checkWalletUniqueness(
   }
 }
 
-function _getHdPath(mnemonic: string, derivationPath: string): string {
-  const hdRoot: string = new Mnemonic(mnemonic.trim()).toHDPrivateKey().xprivkey
+function _getPasswordOptions(options: ?PasswordOptionsUser): PasswordOptions {
+  const saltBytesCount: number = options
+    ? options.saltBytesCount || DEFAULT_SALT_BYTES_COUNT
+    : DEFAULT_SALT_BYTES_COUNT
+
+  const salt: string = utils.generateSalt(saltBytesCount)
+
+  return !options
+    ? {
+      salt,
+      saltBytesCount,
+      scryptParams: DEFAULT_SCRYPT_PARAMS,
+      encryptionType: DEFAULT_ENCRYPTION_TYPE,
+      derivedKeyLength: DEFAULT_DERIVATION_KEY_LENGTH,
+    }
+    : {
+      salt,
+      saltBytesCount,
+      scryptParams: options.scryptParams || DEFAULT_SCRYPT_PARAMS,
+      encryptionType: options.encryptionType || DEFAULT_ENCRYPTION_TYPE,
+      derivedKeyLength: options.derivedKeyLength || DEFAULT_DERIVATION_KEY_LENGTH,
+    }
+}
+
+function _getMnemonicOptions(options: ?MnemonicOptionsUser): MnemonicOptions {
+  return !options ? {
+    passphrase: '',
+    network: DEFAULT_NETWORK,
+    derivationPath: DEFAULT_DERIVATION_PATH,
+    paddedMnemonicLength: PADDED_MNEMONIC_LENGTH,
+  } : {
+    passphrase: options.passphrase || '',
+    network: options.network || DEFAULT_NETWORK,
+    derivationPath: options.derivationPath || DEFAULT_DERIVATION_PATH,
+    paddedMnemonicLength: options.paddedMnemonicLength || PADDED_MNEMONIC_LENGTH,
+  }
+}
+
+function _getHdPath(mnemonic: string, mnemonicOptions: MnemonicOptions): string {
+  const {
+    network,
+    passphrase,
+    derivationPath,
+  }: MnemonicOptions = mnemonicOptions
+
+  const hdRoot: string = new Mnemonic(mnemonic.trim()).toHDPrivateKey(passphrase, network).xprivkey
   const hdRootKey: HDPrivateKey = new bitcore.HDPrivateKey(hdRoot)
 
   return hdRootKey.derive(derivationPath).xprivkey
 }
 
-function _getPrivateHdRoot(mnemonic: string, derivationPath: ?string): HDPrivateKey {
-  const hdPath: string = _getHdPath(mnemonic, derivationPath || DEFAULT_DERIVATION_PATH)
+function _getPrivateHdRoot(mnemonic: string, mnemonicOptions: MnemonicOptions): HDPrivateKey {
+  const hdPath: string = _getHdPath(mnemonic, mnemonicOptions)
 
   return new bitcore.HDPrivateKey(hdPath)
 }
@@ -125,8 +167,8 @@ function _getPublicHdRoot(bip32XPublicKey: string): HDPublicKey {
   return new bitcore.HDPublicKey(bip32XPublicKey)
 }
 
-function _getXPubFromMnemonic(mnemonic: string, derivationPath: string): string {
-  const hdRoot: HDPrivateKey = _getPrivateHdRoot(mnemonic, derivationPath)
+function _getXPubFromMnemonic(mnemonic: string, mnemonicOptions: MnemonicOptions): string {
+  const hdRoot: HDPrivateKey = _getPrivateHdRoot(mnemonic, mnemonicOptions)
 
   return hdRoot.hdPublicKey.toString()
 }
@@ -183,12 +225,8 @@ function _createMnemonicWallet(
     id,
     data,
     name,
-    scryptParams,
-    saltBytesCount,
-    derivationPath,
-    encryptionType,
-    derivedKeyLength,
-    paddedMnemonicLength,
+    passwordOptions,
+    mnemonicOptions,
   } = walletData
 
   if (!password) {
@@ -197,15 +235,26 @@ function _createMnemonicWallet(
 
   const mnemonic: string = data.toLowerCase()
 
+  const {
+    derivationPath,
+    paddedMnemonicLength,
+  } = mnemonicOptions
+
   if (!checkDerivationPathValid(derivationPath)) {
     throw new Error('Invalid derivation path')
   }
 
-  const xpub: string = _getXPubFromMnemonic(mnemonic, derivationPath)
+  const xpub: string = _getXPubFromMnemonic(mnemonic, mnemonicOptions)
 
   _checkWalletUniqueness(wallets, xpub, 'bip32XPublicKey')
 
-  const salt: string = utils.generateSalt(saltBytesCount)
+  const {
+    salt,
+    scryptParams,
+    encryptionType,
+    derivedKeyLength,
+  } = passwordOptions
+
   const dKey: Uint8Array = _deriveKeyFromPassword(password, salt, scryptParams, derivedKeyLength)
   const mnemonicPad: string = utils.leftPadString(mnemonic, ' ', paddedMnemonicLength)
   const mnemonicEnc: EncryptedData = _encryptData(mnemonicPad, dKey, encryptionType)
@@ -213,12 +262,8 @@ function _createMnemonicWallet(
   return _appendWallet(wallets, {
     id,
     name,
-    salt,
-    scryptParams,
-    saltBytesCount,
-    derivationPath,
-    encryptionType,
-    derivedKeyLength,
+    passwordOptions,
+    mnemonicOptions,
     addressIndex: 0,
     isReadOnly: false,
     type: MNEMONIC_TYPE,
@@ -259,13 +304,9 @@ function _createReadOnlyMnemonicWallet(wallets: Wallets, walletData: WalletData)
     /**
      * Another wallet data, necessary for consistency of types
      */
-    salt: null,
     address: null,
-    scryptParams: null,
-    saltBytesCount: null,
-    encryptionType: null,
-    derivationPath: null,
-    derivedKeyLength: null,
+    passwordOptions: null,
+    mnemonicOptions: null,
   })
 }
 
@@ -278,10 +319,7 @@ function _createAddressWallet(
     id,
     data,
     name,
-    scryptParams,
-    encryptionType,
-    saltBytesCount,
-    derivedKeyLength,
+    passwordOptions,
   } = walletData
 
   if (!password) {
@@ -292,18 +330,20 @@ function _createAddressWallet(
 
   _checkWalletUniqueness(wallets, address, 'address')
 
-  const salt: string = utils.generateSalt(saltBytesCount)
+  const {
+    salt,
+    scryptParams,
+    encryptionType,
+    derivedKeyLength,
+  } = passwordOptions
+
   const dKey: Uint8Array = _deriveKeyFromPassword(password, salt, scryptParams, derivedKeyLength)
 
   return _appendWallet(wallets, {
     id,
     name,
-    salt,
     address,
-    scryptParams,
-    saltBytesCount,
-    encryptionType,
-    derivedKeyLength,
+    passwordOptions,
     isReadOnly: false,
     type: ADDRESS_TYPE,
     customType: 'privateKey',
@@ -315,7 +355,7 @@ function _createAddressWallet(
      * Another wallet data, necessary for consistency of types
      */
     addressIndex: null,
-    derivationPath: null,
+    mnemonicOptions: null,
     bip32XPublicKey: null,
   })
 }
@@ -343,14 +383,10 @@ function _createReadOnlyAddressWallet(wallets: Wallets, walletData: WalletData):
     /**
      * Another wallet data, necessary for consistency of types
      */
-    salt: null,
     addressIndex: null,
-    scryptParams: null,
-    saltBytesCount: null,
-    derivationPath: null,
-    encryptionType: null,
     bip32XPublicKey: null,
-    derivedKeyLength: null,
+    passwordOptions: null,
+    mnemonicOptions: null,
   })
 }
 
@@ -376,20 +412,20 @@ function _decryptPrivateKey(
   return _decryptData(dataToDecrypt, derivedKey, encryptionType, true)
 }
 
-function _getPrivateKeyFromMnemonic(wallet: Wallet, derivedKey: Uint8Array): string {
+function _getPrivateKeyFromMnemonic(wallet: Wallet, dKey: Uint8Array): string {
   const {
     encrypted,
     addressIndex,
-    derivationPath,
-    encryptionType,
+    passwordOptions,
+    mnemonicOptions,
   }: Wallet = wallet
 
-  if (!encrypted.mnemonic) {
-    throw new Error('Data to decrypt not found')
+  if (!(encrypted.mnemonic && passwordOptions && mnemonicOptions)) {
+    throw new Error('Invalid wallet')
   }
 
-  const mnemonic: string = _decryptData(encrypted.mnemonic, derivedKey, encryptionType)
-  const hdRoot: HDPrivateKey = _getPrivateHdRoot(mnemonic.trim(), derivationPath)
+  const mnemonic: string = _decryptData(encrypted.mnemonic, dKey, passwordOptions.encryptionType)
+  const hdRoot: HDPrivateKey = _getPrivateHdRoot(mnemonic.trim(), mnemonicOptions)
   const generatedKey: HDPrivateKey = hdRoot.derive(addressIndex || 0)
 
   return generatedKey.privateKey.toString()
@@ -422,42 +458,6 @@ function _testPassword(password: string): void {
   }
 }
 
-function _getPasswordOptions(options: ?PasswordOptionsUser): SetPasswordOptions {
-  const saltBytesCount: number = options
-    ? options.saltBytesCount || DEFAULT_SALT_BYTES_COUNT
-    : DEFAULT_SALT_BYTES_COUNT
-
-  const salt: string = utils.generateSalt(saltBytesCount)
-
-  return !options
-    ? {
-      salt,
-      saltBytesCount,
-      scryptParams: DEFAULT_SCRYPT_PARAMS,
-      encryptionType: DEFAULT_ENCRYPTION_TYPE,
-      derivedKeyLength: DEFAULT_DERIVATION_KEY_LENGTH,
-    }
-    : {
-      salt,
-      saltBytesCount,
-      scryptParams: options.scryptParams || DEFAULT_SCRYPT_PARAMS,
-      encryptionType: options.encryptionType || DEFAULT_ENCRYPTION_TYPE,
-      derivedKeyLength: options.derivedKeyLength || DEFAULT_DERIVATION_KEY_LENGTH,
-    }
-}
-
-function _getMnemonicOptions(options: ?MnemonicOptionsUser): MnemonicOptions {
-  return !options
-    ? {
-      derivationPath: DEFAULT_DERIVATION_PATH,
-      paddedMnemonicLength: PADDED_MNEMONIC_LENGTH,
-    }
-    : {
-      derivationPath: options.derivationPath || DEFAULT_DERIVATION_PATH,
-      paddedMnemonicLength: options.paddedMnemonicLength || PADDED_MNEMONIC_LENGTH,
-    }
-}
-
 function getWallet(wallets: Wallets, walletId: string): Wallet {
   if (!walletId) {
     throw new Error('Wallet ID not provided')
@@ -477,6 +477,8 @@ function createWallet(wallets: Wallets, walletNewData: WalletNewData, password?:
     scryptParams,
     data,
     name,
+    network,
+    passphrase,
     derivationPath,
     encryptionType,
     saltBytesCount,
@@ -494,16 +496,26 @@ function createWallet(wallets: Wallets, walletNewData: WalletNewData, password?:
 
   const id: string = uuidv4()
 
+  const passwordOptions: PasswordOptions = _getPasswordOptions({
+    scryptParams,
+    saltBytesCount,
+    encryptionType,
+    derivedKeyLength,
+  })
+
+  const mnemonicOptions: MnemonicOptions = _getMnemonicOptions({
+    network,
+    passphrase,
+    derivationPath,
+    paddedMnemonicLength,
+  })
+
   const walletData: WalletData = {
     id,
     data,
+    passwordOptions,
+    mnemonicOptions,
     name: name || id,
-    scryptParams: scryptParams || DEFAULT_SCRYPT_PARAMS,
-    saltBytesCount: saltBytesCount || DEFAULT_SALT_BYTES_COUNT,
-    derivationPath: derivationPath || DEFAULT_DERIVATION_PATH,
-    encryptionType: encryptionType || DEFAULT_ENCRYPTION_TYPE,
-    derivedKeyLength: derivedKeyLength || DEFAULT_DERIVATION_KEY_LENGTH,
-    paddedMnemonicLength: paddedMnemonicLength || PADDED_MNEMONIC_LENGTH,
   }
 
   if (checkMnemonicValid(data)) {
@@ -532,16 +544,12 @@ function updateWallet(
 ): Wallets {
   const {
     encrypted,
-    scryptParams,
+    passwordOptions,
+    mnemonicOptions,
     name,
-    salt,
     customType,
-    derivationPath,
-    encryptionType,
     bip32XPublicKey,
     addressIndex,
-    saltBytesCount,
-    derivedKeyLength,
     isReadOnly,
   } = updatedData
 
@@ -550,16 +558,12 @@ function updateWallet(
   const newWallet: Wallet = {
     ...wallet,
     encrypted: encrypted || wallet.encrypted,
-    scryptParams: scryptParams || wallet.scryptParams,
+    passwordOptions: passwordOptions || wallet.passwordOptions,
+    mnemonicOptions: mnemonicOptions || wallet.mnemonicOptions,
     name: name || wallet.name,
-    salt: salt || wallet.salt,
     customType: customType || wallet.customType,
-    derivationPath: derivationPath || wallet.derivationPath,
-    encryptionType: encryptionType || wallet.encryptionType,
     bip32XPublicKey: bip32XPublicKey || wallet.bip32XPublicKey,
     addressIndex: addressIndex || wallet.addressIndex,
-    saltBytesCount: saltBytesCount || wallet.saltBytesCount,
-    derivedKeyLength: derivedKeyLength || wallet.derivedKeyLength,
     isReadOnly: (typeof (isReadOnly) === 'boolean') ? isReadOnly : wallet.isReadOnly,
   }
 
@@ -589,37 +593,43 @@ function addMnemonic(
   }
 
   const mnemonic: string = mnemonicUser.toLowerCase()
-  const mOptions: MnemonicOptions = _getMnemonicOptions(mnemonicOptionsUser)
+  const mnemonicOptions: MnemonicOptions = _getMnemonicOptions(mnemonicOptionsUser)
 
-  if (!checkDerivationPathValid(mOptions.derivationPath)) {
+  const {
+    derivationPath,
+    paddedMnemonicLength,
+  }: MnemonicOptions = mnemonicOptions
+
+  if (!checkDerivationPathValid(derivationPath)) {
     throw new Error('Invalid derivation path')
   }
 
-  const xpubFromMnemonic: string = _getXPubFromMnemonic(mnemonic, mOptions.derivationPath)
+  const xpubFromMnemonic: string = _getXPubFromMnemonic(mnemonic, mnemonicOptions)
 
   if (bip32XPublicKey.toLowerCase() !== xpubFromMnemonic.toLowerCase()) {
     throw new Error('This private key is not pair with existed address')
   }
 
-  const pOptions: SetPasswordOptions = _getPasswordOptions(passwordOptionsUser)
+  const passwordOptions: PasswordOptions = _getPasswordOptions(passwordOptionsUser)
 
-  const derivedKey: Uint8Array = _deriveKeyFromPassword(
-    password,
-    pOptions.salt,
-    pOptions.scryptParams,
-    pOptions.derivedKeyLength,
-  )
+  const {
+    salt,
+    scryptParams,
+    encryptionType,
+    derivedKeyLength,
+  }: PasswordOptions = passwordOptions
 
-  const mnemonicPad: string = utils.leftPadString(mnemonic, ' ', mOptions.paddedMnemonicLength)
+  const dKey: Uint8Array = _deriveKeyFromPassword(password, salt, scryptParams, derivedKeyLength)
+  const mnemonicPad: string = utils.leftPadString(mnemonic, ' ', paddedMnemonicLength)
 
   return updateWallet(wallets, walletId, {
-    ...pOptions,
+    passwordOptions,
+    mnemonicOptions,
     encrypted: {
-      mnemonic: _encryptData(mnemonicPad, derivedKey, pOptions.encryptionType),
+      mnemonic: _encryptData(mnemonicPad, dKey, encryptionType),
       privateKey: null,
     },
     customType: 'mnemonic',
-    derivationPath: mOptions.derivationPath,
     isReadOnly: false,
   })
 }
@@ -629,7 +639,7 @@ function addPrivateKey(
   walletId: string,
   privateKey: string,
   password: string,
-  passwordOptions?: ?PasswordOptionsUser,
+  passwordOptionsUser?: ?PasswordOptionsUser,
 ): Wallets {
   _testPassword(password)
 
@@ -649,19 +659,21 @@ function addPrivateKey(
     throw new Error('This private key is not pair with existed address')
   }
 
-  const options: SetPasswordOptions = _getPasswordOptions(passwordOptions)
+  const passwordOptions: PasswordOptions = _getPasswordOptions(passwordOptionsUser)
 
-  const derivedKey: Uint8Array = _deriveKeyFromPassword(
-    password,
-    options.salt,
-    options.scryptParams,
-    options.derivedKeyLength,
-  )
+  const {
+    salt,
+    scryptParams,
+    encryptionType,
+    derivedKeyLength,
+  }: PasswordOptions = passwordOptions
+
+  const dKey: Uint8Array = _deriveKeyFromPassword(password, salt, scryptParams, derivedKeyLength)
 
   return updateWallet(wallets, walletId, {
-    ...options,
+    passwordOptions,
     encrypted: {
-      privateKey: _encryptPrivateKey(privateKey, derivedKey, options.encryptionType),
+      privateKey: _encryptPrivateKey(privateKey, dKey, encryptionType),
       mnemonic: null,
     },
     customType: 'privateKey',
@@ -699,12 +711,9 @@ function setDerivationPath(
 ): Wallets {
   const {
     encrypted,
-    scryptParams,
+    passwordOptions,
+    mnemonicOptions,
     type,
-    salt,
-    encryptionType,
-    derivationPath,
-    derivedKeyLength,
     isReadOnly,
   }: Wallet = getWallet(wallets, walletId)
 
@@ -715,9 +724,22 @@ function setDerivationPath(
     throw new Error('Invalid derivation path')
   }
 
+  if (!(passwordOptions && mnemonicOptions)) {
+    throw new Error('Invalid wallet')
+  }
+
+  const { derivationPath }: MnemonicOptions = mnemonicOptions
+
   if (derivationPath && (derivationPath.toLowerCase() === newDerivationPath.toLowerCase())) {
     throw new Error('Can not set the same derivation path')
   }
+
+  const {
+    salt,
+    scryptParams,
+    encryptionType,
+    derivedKeyLength,
+  }: PasswordOptions = passwordOptions
 
   const dKey: Uint8Array = _deriveKeyFromPassword(password, salt, scryptParams, derivedKeyLength)
 
@@ -726,13 +748,76 @@ function setDerivationPath(
   }
 
   const mnemonic: string = _decryptData(encrypted.mnemonic, dKey, encryptionType)
-  const xpub: string = _getXPubFromMnemonic(mnemonic.trim(), newDerivationPath)
+
+  const mnemonicOptionsNew: MnemonicOptions = {
+    ...mnemonicOptions,
+    derivationPath: newDerivationPath,
+  }
+
+  const xpub: string = _getXPubFromMnemonic(mnemonic.trim(), mnemonicOptionsNew)
 
   _checkWalletUniqueness(wallets, xpub, 'bip32XPublicKey')
 
   return updateWallet(wallets, walletId, {
     bip32XPublicKey: xpub,
-    derivationPath: newDerivationPath,
+    mnemonicOptions: mnemonicOptionsNew,
+  })
+}
+
+function setMnemonicPassphrase(
+  wallets: Wallets,
+  walletId: string,
+  password: string,
+  newPassphrase: string,
+): Wallets {
+  const {
+    encrypted,
+    passwordOptions,
+    mnemonicOptions,
+    type,
+    isReadOnly,
+  }: Wallet = getWallet(wallets, walletId)
+
+  _checkMnemonicType(type)
+  _checkNotReadOnly(isReadOnly)
+
+  if (!(newPassphrase && passwordOptions && mnemonicOptions)) {
+    throw new Error('Invalid wallet')
+  }
+
+  const { passphrase }: MnemonicOptions = mnemonicOptions
+
+  if (passphrase && (passphrase.toLowerCase() === newPassphrase.toLowerCase())) {
+    throw new Error('Can not set the same passphrase')
+  }
+
+  const {
+    salt,
+    scryptParams,
+    encryptionType,
+    derivedKeyLength,
+  }: PasswordOptions = passwordOptions
+
+  const dKey: Uint8Array = _deriveKeyFromPassword(password, salt, scryptParams, derivedKeyLength)
+
+  if (!encrypted.mnemonic) {
+    throw new Error('Data to decrypt not found')
+  }
+
+  const mnemonic: string = _decryptData(encrypted.mnemonic, dKey, encryptionType)
+
+  const mnemonicOptionsNew: MnemonicOptions = {
+    ...mnemonicOptions,
+    passphrase: newPassphrase,
+  }
+
+  const xpub: string = _getXPubFromMnemonic(mnemonic.trim(), mnemonicOptionsNew)
+
+  _checkWalletUniqueness(wallets, xpub, 'bip32XPublicKey')
+
+  return updateWallet(wallets, walletId, {
+    bip32XPublicKey: xpub,
+    mnemonicOptions: mnemonicOptionsNew,
   })
 }
 
@@ -741,28 +826,35 @@ function setPassword(
   walletId: string,
   password: string,
   passwordNew: string,
-  passwordOptions?: ?PasswordOptionsUser,
+  passwordOptionsUser?: ?PasswordOptionsUser,
 ): Wallets {
   const {
-    salt,
     type,
     encrypted,
     isReadOnly,
-    scryptParams,
-    encryptionType,
-    derivedKeyLength,
+    passwordOptions,
   }: Wallet = getWallet(wallets, walletId)
 
   _checkNotReadOnly(isReadOnly)
 
-  const options: SetPasswordOptions = _getPasswordOptions(passwordOptions)
-  const dKey: Uint8Array = _deriveKeyFromPassword(password, salt, scryptParams, derivedKeyLength)
+  if (!passwordOptions) {
+    throw new Error('Invalid wallet')
+  }
 
-  const dKeyNew: Uint8Array = _deriveKeyFromPassword(
+  const passwordOptionsNew: PasswordOptions = _getPasswordOptions(passwordOptionsUser)
+
+  const derivedKey: Uint8Array = _deriveKeyFromPassword(
+    password,
+    passwordOptions.salt,
+    passwordOptions.scryptParams,
+    passwordOptions.derivedKeyLength,
+  )
+
+  const derivedKeyNew: Uint8Array = _deriveKeyFromPassword(
     passwordNew,
-    options.salt,
-    options.scryptParams,
-    options.derivedKeyLength,
+    passwordOptionsNew.salt,
+    passwordOptionsNew.scryptParams,
+    passwordOptionsNew.derivedKeyLength,
   )
 
   if (type === MNEMONIC_TYPE) {
@@ -770,13 +862,21 @@ function setPassword(
       throw new Error('Data to decrypt not found')
     }
 
-    const mnemonicDec: string = _decryptData(encrypted.mnemonic, dKey, encryptionType)
-    const mnemonicEnc: EncryptedData = _encryptData(mnemonicDec, dKeyNew, options.encryptionType)
+    const mnemonicDec: string = _decryptData(
+      encrypted.mnemonic,
+      derivedKey,
+      passwordOptions.encryptionType,
+    )
+
+    const mnemonicEnc: EncryptedData = _encryptData(
+      mnemonicDec,
+      derivedKeyNew,
+      passwordOptionsNew.encryptionType,
+    )
 
     return updateWallet(wallets, walletId, {
-      ...options,
+      passwordOptions: passwordOptionsNew,
       encrypted: {
-        ...encrypted,
         mnemonic: mnemonicEnc,
         privateKey: null,
       },
@@ -786,14 +886,22 @@ function setPassword(
       throw new Error('Data to decrypt not found')
     }
 
-    const pKeyDec: string = _decryptPrivateKey(encrypted.privateKey, dKey, encryptionType)
-    const pKeyEnc: EncryptedData = _encryptPrivateKey(pKeyDec, dKeyNew, options.encryptionType)
+    const privateKeyDec: string = _decryptPrivateKey(
+      encrypted.privateKey,
+      derivedKey,
+      passwordOptions.encryptionType,
+    )
+
+    const privateKeyEnc: EncryptedData = _encryptPrivateKey(
+      privateKeyDec,
+      derivedKeyNew,
+      passwordOptionsNew.encryptionType,
+    )
 
     return updateWallet(wallets, walletId, {
-      ...options,
+      passwordOptions: passwordOptionsNew,
       encrypted: {
-        ...encrypted,
-        privateKey: pKeyEnc,
+        privateKey: privateKeyEnc,
         mnemonic: null,
       },
     })
@@ -837,15 +945,23 @@ function getPrivateKey(wallets: Wallets, walletId: string, password: string): st
 
   const {
     encrypted,
-    scryptParams,
+    passwordOptions,
     type,
-    salt,
-    encryptionType,
-    derivedKeyLength,
     isReadOnly,
   } = wallet
 
   _checkNotReadOnly(isReadOnly)
+
+  if (!passwordOptions) {
+    throw new Error('Invalid wallet')
+  }
+
+  const {
+    salt,
+    scryptParams,
+    encryptionType,
+    derivedKeyLength,
+  }: PasswordOptions = passwordOptions
 
   const dKey: Uint8Array = _deriveKeyFromPassword(password, salt, scryptParams, derivedKeyLength)
 
@@ -871,16 +987,24 @@ function getPrivateKey(wallets: Wallets, walletId: string, password: string): st
 function getMnemonic(wallets: Wallets, walletId: string, password: string): string {
   const {
     encrypted,
-    scryptParams,
-    salt,
+    passwordOptions,
     type,
-    encryptionType,
-    derivedKeyLength,
     isReadOnly,
   }: Wallet = getWallet(wallets, walletId)
 
   _checkMnemonicType(type)
   _checkNotReadOnly(isReadOnly)
+
+  if (!passwordOptions) {
+    throw new Error('Invalid wallet')
+  }
+
+  const {
+    salt,
+    scryptParams,
+    encryptionType,
+    derivedKeyLength,
+  }: PasswordOptions = passwordOptions
 
   const dKey: Uint8Array = _deriveKeyFromPassword(password, salt, scryptParams, derivedKeyLength)
 
@@ -900,16 +1024,13 @@ function getWalletData(
 ): WalletDecryptedData {
   const {
     encrypted,
-    scryptParams,
+    passwordOptions,
     id,
     name,
-    salt,
     type,
     address,
     customType,
-    encryptionType,
     bip32XPublicKey,
-    derivedKeyLength,
     isReadOnly,
   }: Wallet = getWallet(wallets, walletId)
 
@@ -932,9 +1053,16 @@ function getWalletData(
       }
     }
 
-    if (!password) {
-      throw new Error('Password not found')
+    if (!(password && passwordOptions)) {
+      throw new Error('Invalid wallet')
     }
+
+    const {
+      salt,
+      scryptParams,
+      encryptionType,
+      derivedKeyLength,
+    }: PasswordOptions = passwordOptions
 
     const dKey: Uint8Array = _deriveKeyFromPassword(password, salt, scryptParams, derivedKeyLength)
 
@@ -955,9 +1083,16 @@ function getWalletData(
       }
     }
 
-    if (!password) {
-      throw new Error('Password not found')
+    if (!(password && passwordOptions)) {
+      throw new Error('Invalid wallet')
     }
+
+    const {
+      salt,
+      scryptParams,
+      encryptionType,
+      derivedKeyLength,
+    }: PasswordOptions = passwordOptions
 
     const dKey: Uint8Array = _deriveKeyFromPassword(password, salt, scryptParams, derivedKeyLength)
 
@@ -1008,6 +1143,7 @@ export default {
   getWalletData,
   setAddressIndex,
   setDerivationPath,
+  setMnemonicPassphrase,
   // utils
   testPassword,
   generateMnemonic,
