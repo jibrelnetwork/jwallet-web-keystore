@@ -36,16 +36,20 @@ const DEFAULT_SCRYPT_PARAMS: ScryptParams = {
 }
 
 const DEFAULT_NETWORK: string = 'livenet'
-const ADDRESS_TYPE: 'address' = 'address'
-const MNEMONIC_TYPE: 'mnemonic' = 'mnemonic'
 const DEFAULT_ENCRYPTION_TYPE: string = 'nacl.secretbox'
 const DEFAULT_DERIVATION_PATH: string = 'm/44\'/60\'/0\'/0'
 const PADDED_MNEMONIC_LENGTH: number = 120
-const TEST_PASSWORD_DATA_LENGTH: number = 120
 const DEFAULT_SALT_BYTES_COUNT: number = 32
 const DEFAULT_DERIVATION_KEY_LENGTH: number = 32
 
-function _getPasswordOptions(options: ?PasswordOptionsUser): PasswordOptions {
+export {
+  testPassword,
+  generateMnemonic,
+  checkMnemonicValid,
+  checkBip32XPublicKeyValid,
+}
+
+export function getPasswordOptions(options: ?PasswordOptionsUser): PasswordOptions {
   const salt: string = utils.generateSalt(DEFAULT_SALT_BYTES_COUNT)
 
   return !options
@@ -63,7 +67,7 @@ function _getPasswordOptions(options: ?PasswordOptionsUser): PasswordOptions {
     }
 }
 
-function _getMnemonicOptions(options: ?MnemonicOptionsUser): MnemonicOptions {
+export function getMnemonicOptions(options: ?MnemonicOptionsUser): MnemonicOptions {
   return !options ? {
     passphrase: '',
     network: DEFAULT_NETWORK,
@@ -77,7 +81,7 @@ function _getMnemonicOptions(options: ?MnemonicOptionsUser): MnemonicOptions {
   }
 }
 
-function _getHdPath(mnemonic: string, mnemonicOptions: MnemonicOptions): string {
+export function getHdPath(mnemonic: string, mnemonicOptions: MnemonicOptions): string {
   const {
     network,
     passphrase,
@@ -90,17 +94,17 @@ function _getHdPath(mnemonic: string, mnemonicOptions: MnemonicOptions): string 
   return hdRootKey.derive(derivationPath).xprivkey
 }
 
-function _getPrivateHdRoot(mnemonic: string, mnemonicOptions: MnemonicOptions): HDPrivateKey {
-  const hdPath: string = _getHdPath(mnemonic, mnemonicOptions)
+export function getPrivateHdRoot(mnemonic: string, mnemonicOptions: MnemonicOptions): HDPrivateKey {
+  const hdPath: string = getHdPath(mnemonic, mnemonicOptions)
 
   return new bitcore.HDPrivateKey(hdPath)
 }
 
-function _getPublicHdRoot(bip32XPublicKey: string): HDPublicKey {
+export function getPublicHdRoot(bip32XPublicKey: string): HDPublicKey {
   return new bitcore.HDPublicKey(bip32XPublicKey)
 }
 
-function _deriveKeyFromPassword(
+export function deriveKeyFromPassword(
   password: string,
   salt: string,
   scryptParams: ScryptParams,
@@ -108,7 +112,7 @@ function _deriveKeyFromPassword(
   return utils.deriveKeyFromPassword(password, scryptParams, DEFAULT_DERIVATION_KEY_LENGTH, salt)
 }
 
-function _encryptData(
+export function encryptData(
   dataToEncrypt: string,
   derivedKey: Uint8Array,
   encryptionType: string,
@@ -122,7 +126,7 @@ function _encryptData(
   })
 }
 
-function _decryptData(
+export function decryptData(
   dataToDecrypt: EncryptedData,
   derivedKey: Uint8Array,
   encryptionType: string,
@@ -136,134 +140,49 @@ function _decryptData(
   })
 }
 
-function _testPassword(password: string): void {
-  const testPasswordResult: PasswordResult = testPassword(password)
-
-  if (testPasswordResult.score < 3) {
-    throw new Error(testPasswordResult.feedback.warning)
-  }
-}
-
-function _reEncryptWallet(
-  wallet: Wallet,
-  derivedKey: Uint8Array,
-  newDerivedKey: Uint8Array,
-  encryptionType: string,
-  newEncryptionType: string,
-): Wallet {
-  const {
-    type,
-    encrypted,
-    isReadOnly,
-  }: Wallet = wallet
-
-  if (isReadOnly) {
-    return wallet
-  }
-
-  if ((type === MNEMONIC_TYPE) && encrypted.mnemonic) {
-    const mnemonicDec: string = _decryptData(encrypted.mnemonic, derivedKey, encryptionType)
-
-    return {
-      ...wallet,
-      encrypted: {
-        ...encrypted,
-        mnemonic: _encryptData(mnemonicDec, newDerivedKey, newEncryptionType),
-      },
-    }
-  } else if ((type === ADDRESS_TYPE) && encrypted.privateKey) {
-    const privateKeyDec: string = _decryptData(encrypted.privateKey, derivedKey, encryptionType)
-
-    return {
-      ...wallet,
-      encrypted: {
-        ...encrypted,
-        privateKey: _encryptData(privateKeyDec, newDerivedKey, newEncryptionType),
-      },
-    }
-  }
-
-  return wallet
-}
-
-function _reEncryptWallets(
-  wallets: Wallets,
-  derivedKey: Uint8Array,
-  newDerivedKey: Uint8Array,
-  encryptionType: string,
-  newEncryptionType: string,
-): Wallets {
-  return wallets.map((wallet: Wallet): Wallet => _reEncryptWallet(
-    wallet,
-    derivedKey,
-    newDerivedKey,
-    encryptionType,
-    newEncryptionType,
-  ))
-}
-
-function checkAddressValid(address: string): boolean {
+export function checkAddressValid(address: string): boolean {
   return utils.checkAddressValid(address)
 }
 
-function checkChecksumAddressValid(address: string): boolean {
+export function checkChecksumAddressValid(address: string): boolean {
   return utils.checkChecksumAddressValid(address)
 }
 
-function checkPrivateKeyValid(privateKey: string): boolean {
+export function checkPrivateKeyValid(privateKey: string): boolean {
   return utils.checkPrivateKeyValid(privateKey)
 }
 
-function checkDerivationPathValid(derivationPath: string): boolean {
+export function checkDerivationPathValid(derivationPath: string): boolean {
   return bitcore.HDPrivateKey.isValidPath(derivationPath)
 }
 
-function checkWalletIsNotReadOnly(isReadOnly: boolean): void {
+export function checkWalletIsNotReadOnly(isReadOnly: boolean): void {
   if (isReadOnly) {
     throw new Error('Wallet is read only')
   }
 }
 
-function checkWalletIsMnemonicType(type: WalletType): void {
-  if (type !== MNEMONIC_TYPE) {
-    throw new Error('Wallet type is not mnemonic')
-  }
-}
-
-function checkWalletUniqueness(
-  wallets: Wallets,
-  uniqueProperty: string,
-  propertyName: string,
-): void {
-  const foundWallet: ?Wallet = wallets.find((wallet: Wallet): boolean => {
-    const propertyValue: string = wallet[propertyName]
-
-    return propertyValue ? (propertyValue.toLowerCase() === uniqueProperty.toLowerCase()) : false
-  })
-
-  if (foundWallet) {
-    throw new Error(`Wallet with this ${propertyName} already exists`)
-  }
-}
-
-function getAddressFromPrivateKey(privateKey: string): string {
+export function getAddressFromPrivateKey(privateKey: string): string {
   return utils.getAddressFromPrivateKey(privateKey)
 }
 
-function getXPubFromMnemonic(mnemonic: string, mnemonicOptionsUser: MnemonicOptionsUser): string {
-  const mnemonicOptions: MnemonicOptions = _getMnemonicOptions(mnemonicOptionsUser)
-  const hdRoot: HDPrivateKey = _getPrivateHdRoot(mnemonic, mnemonicOptions)
+export function getXPubFromMnemonic(
+  mnemonic: string,
+  mnemonicOptionsUser: MnemonicOptionsUser,
+): string {
+  const mnemonicOptions: MnemonicOptions = getMnemonicOptions(mnemonicOptionsUser)
+  const hdRoot: HDPrivateKey = getPrivateHdRoot(mnemonic, mnemonicOptions)
 
   return hdRoot.hdPublicKey.toString()
 }
 
-function encryptMnemonic(
+export function encryptMnemonic(
   mnemonic: string,
   password: string,
   passwordOptionsUser?: ?PasswordOptionsUser,
 ): EncryptedData {
   const mnemonicPad: string = utils.leftPadString(mnemonic, ' ', PADDED_MNEMONIC_LENGTH)
-  const passwordOptions: PasswordOptions = _getPasswordOptions(passwordOptionsUser)
+  const passwordOptions: PasswordOptions = getPasswordOptions(passwordOptionsUser)
 
   const {
     salt,
@@ -271,17 +190,17 @@ function encryptMnemonic(
     encryptionType,
   } = passwordOptions
 
-  const derivedKey: Uint8Array = _deriveKeyFromPassword(password, salt, scryptParams)
+  const derivedKey: Uint8Array = deriveKeyFromPassword(password, salt, scryptParams)
 
-  return _encryptData(mnemonicPad, derivedKey, encryptionType, false)
+  return encryptData(mnemonicPad, derivedKey, encryptionType, false)
 }
 
-function encryptPrivateKey(
+export function encryptPrivateKey(
   privateKey: string,
   password: string,
   passwordOptionsUser?: ?PasswordOptionsUser,
 ): EncryptedData {
-  const passwordOptions: PasswordOptions = _getPasswordOptions(passwordOptionsUser)
+  const passwordOptions: PasswordOptions = getPasswordOptions(passwordOptionsUser)
 
   const {
     salt,
@@ -289,17 +208,17 @@ function encryptPrivateKey(
     encryptionType,
   } = passwordOptions
 
-  const derivedKey: Uint8Array = _deriveKeyFromPassword(password, salt, scryptParams)
+  const derivedKey: Uint8Array = deriveKeyFromPassword(password, salt, scryptParams)
 
-  return _encryptData(privateKey, derivedKey, encryptionType, true)
+  return encryptData(privateKey, derivedKey, encryptionType, true)
 }
 
-function decryptMnemonic(
+export function decryptMnemonic(
   mnemonic: EncryptedData,
   password: string,
   passwordOptionsUser?: ?PasswordOptionsUser,
 ): string {
-  const passwordOptions: PasswordOptions = _getPasswordOptions(passwordOptionsUser)
+  const passwordOptions: PasswordOptions = getPasswordOptions(passwordOptionsUser)
 
   const {
     salt,
@@ -307,18 +226,18 @@ function decryptMnemonic(
     encryptionType,
   } = passwordOptions
 
-  const derivedKey: Uint8Array = _deriveKeyFromPassword(password, salt, scryptParams)
-  const mnemonicPad: string = _decryptData(mnemonic, derivedKey, encryptionType, true)
+  const derivedKey: Uint8Array = deriveKeyFromPassword(password, salt, scryptParams)
+  const mnemonicPad: string = decryptData(mnemonic, derivedKey, encryptionType, true)
 
   return mnemonicPad.trim()
 }
 
-function decryptPrivateKey(
+export function decryptPrivateKey(
   privateKey: EncryptedData,
   password: string,
   passwordOptionsUser?: ?PasswordOptionsUser,
 ): string {
-  const passwordOptions: PasswordOptions = _getPasswordOptions(passwordOptionsUser)
+  const passwordOptions: PasswordOptions = getPasswordOptions(passwordOptionsUser)
 
   const {
     salt,
@@ -326,31 +245,35 @@ function decryptPrivateKey(
     encryptionType,
   } = passwordOptions
 
-  const derivedKey: Uint8Array = _deriveKeyFromPassword(password, salt, scryptParams)
+  const derivedKey: Uint8Array = deriveKeyFromPassword(password, salt, scryptParams)
 
-  return _decryptData(privateKey, derivedKey, encryptionType, true)
+  return decryptData(privateKey, derivedKey, encryptionType, true)
 }
 
-function getPrivateKeyFromMnemonic(
+export function getPrivateKeyFromMnemonic(
   mnemonic: string,
   addressIndex: number,
   mnemonicOptions: MnemonicOptions,
 ): string {
-  const hdRoot: HDPrivateKey = _getPrivateHdRoot(mnemonic, mnemonicOptions)
+  const hdRoot: HDPrivateKey = getPrivateHdRoot(mnemonic, mnemonicOptions)
   const generatedKey: HDPrivateKey = hdRoot.derive(addressIndex)
 
   return generatedKey.privateKey.toString()
 }
 
-function generateAddress(hdRoot: HDPublicKey, index: number): string {
+export function generateAddress(hdRoot: HDPublicKey, index: number): string {
   const generatedKey: HDPublicKey = hdRoot.derive(index)
   const publicKey: string = generatedKey.publicKey.toString()
 
   return utils.getAddressFromPublicKey(publicKey)
 }
 
-function generateAddresses(bip32XPublicKey: string, start: ?number, end: ?number): Array<string> {
-  const hdRoot: HDPublicKey = _getPublicHdRoot(bip32XPublicKey)
+export function generateAddresses(
+  bip32XPublicKey: string,
+  start: ?number,
+  end: ?number,
+): Array<string> {
+  const hdRoot: HDPublicKey = getPublicHdRoot(bip32XPublicKey)
   const startIndex: number = start || 0
   const endIndex: number = end || startIndex
   const addressesCount: number = endIndex - startIndex
@@ -359,110 +282,4 @@ function generateAddresses(bip32XPublicKey: string, start: ?number, end: ?number
   return Array
     .from(new Array(addressesCount + 1).keys())
     .map((currentIndex: number): string => generateAddress(hdRoot, startIndex + currentIndex))
-}
-
-/**
- * TODO: Move this function into jwallet-web
- */
-function initKeystore(password: string, passwordOptionsUser?: ?PasswordOptionsUser): Keystore {
-  _testPassword(password)
-
-  const passwordOptions: PasswordOptions = _getPasswordOptions(passwordOptionsUser)
-
-  const {
-    salt,
-    scryptParams,
-    encryptionType,
-  }: PasswordOptions = passwordOptions
-
-  const testPasswordData: string = utils.generateSalt(TEST_PASSWORD_DATA_LENGTH)
-  const dKey: Uint8Array = _deriveKeyFromPassword(password, salt, scryptParams)
-  const testPasswordDataEnc: EncryptedData = _encryptData(testPasswordData, dKey, encryptionType)
-
-  return {
-    wallets: [],
-    passwordOptions,
-    testPasswordData: testPasswordDataEnc,
-  }
-}
-
-/**
- * TODO: Move this function into jwallet-web
- */
-function setPassword(
-  keystore: Keystore,
-  password: string,
-  newPassword: string,
-  passwordOptionsUser?: ?PasswordOptionsUser,
-): Keystore {
-  const {
-    wallets,
-    passwordOptions,
-    testPasswordData,
-  }: Keystore = keystore
-
-  const passwordOptionsNew: PasswordOptions = _getPasswordOptions(passwordOptionsUser)
-
-  const derivedKey: Uint8Array = _deriveKeyFromPassword(
-    password,
-    passwordOptions.salt,
-    passwordOptions.scryptParams,
-  )
-
-  const testPasswordDataDec: string = _decryptData(
-    testPasswordData,
-    derivedKey,
-    passwordOptions.encryptionType,
-  )
-
-  const derivedKeyNew: Uint8Array = _deriveKeyFromPassword(
-    newPassword,
-    passwordOptionsNew.salt,
-    passwordOptionsNew.scryptParams,
-  )
-
-  const testPasswordDataEnc: EncryptedData = _encryptData(
-    testPasswordDataDec,
-    derivedKeyNew,
-    passwordOptionsNew.encryptionType,
-  )
-
-  const walletsReEnc: Wallets = _reEncryptWallets(
-    wallets,
-    derivedKey,
-    derivedKeyNew,
-    passwordOptions.encryptionType,
-    passwordOptionsNew.encryptionType,
-  )
-
-  return {
-    wallets: walletsReEnc,
-    passwordOptions: passwordOptionsNew,
-    testPasswordData: testPasswordDataEnc,
-  }
-}
-
-export default {
-  setPassword,
-  initKeystore,
-  testPassword,
-  generateAddress,
-  encryptMnemonic,
-  decryptMnemonic,
-  generateMnemonic,
-  generateAddresses,
-  encryptPrivateKey,
-  decryptPrivateKey,
-  checkAddressValid,
-  checkMnemonicValid,
-  getXPubFromMnemonic,
-  checkPrivateKeyValid,
-  checkWalletUniqueness,
-  getAddressFromPrivateKey,
-  checkDerivationPathValid,
-  checkWalletIsNotReadOnly,
-  checkBip32XPublicKeyValid,
-  checkChecksumAddressValid,
-  checkWalletIsMnemonicType,
-  getPrivateKeyFromMnemonic,
 }

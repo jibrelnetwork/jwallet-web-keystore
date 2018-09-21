@@ -1,5 +1,5 @@
 // @flow
 
-import keystore from './keystore'
+import * as keystore from './keystore'
 
 export default keystore
