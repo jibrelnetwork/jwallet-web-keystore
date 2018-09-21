@@ -40,19 +40,21 @@ describe('mnemonic read only wallet', function createReadOnlyMnemonicWalletTest(
 
     wallet.should.be.an.Object()
     wallet.id.should.be.a.String()
+    should(wallet.address).be.null()
     wallet.name.should.be.equal(name)
-    should(wallet.address).be.equal(null)
     wallet.addressIndex.should.be.equal(0)
-    wallet.encrypted.should.be.an.Object()
     wallet.type.should.be.equal('mnemonic')
     wallet.isReadOnly.should.be.equal(true)
-    should(wallet.scryptParams).be.equal(null)
-    should(wallet.derivationPath).be.equal(null)
     wallet.customType.should.be.equal('bip32Xpub')
     wallet.id.length.should.be.equal(walletIdLength)
-    should(wallet.encrypted.mnemonic).be.equal(null)
-    should(wallet.encrypted.privateKey).be.equal(null)
     wallet.bip32XPublicKey.should.be.equal(bip32XPublicKey)
+
+    wallet.encrypted.should.be.an.Object()
+    should(wallet.encrypted.mnemonic).be.null()
+    should(wallet.encrypted.privateKey).be.null()
+
+    should(wallet.passwordOptions).be.null()
+    should(wallet.mnemonicOptions).be.null()
 
     Object.assign(STORE, { wallets })
 

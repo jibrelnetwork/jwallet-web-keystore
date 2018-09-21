@@ -48,9 +48,10 @@ describe('extend wallet permissions', function extendPermissionsTest() {
       wallet.isReadOnly.should.be.equal(true)
       wallet.type.should.be.equal('address')
       wallet.customType.should.be.equal('address')
+
       wallet.encrypted.should.be.an.Object()
-      should(wallet.encrypted.mnemonic).be.equal(null)
-      should(wallet.encrypted.privateKey).be.equal(null)
+      should(wallet.encrypted.mnemonic).be.null()
+      should(wallet.encrypted.privateKey).be.null()
 
       Object.assign(STORE, { wallets })
 
@@ -74,11 +75,12 @@ describe('extend wallet permissions', function extendPermissionsTest() {
       walletUpdated.isReadOnly.should.be.equal(false)
       walletUpdated.type.should.be.equal('address')
       walletUpdated.customType.should.be.equal('privateKey')
+
+      should(wallet.encrypted.mnemonic).be.null()
       walletUpdated.encrypted.should.be.an.Object()
       walletUpdated.encrypted.privateKey.should.be.an.Object()
       walletUpdated.encrypted.privateKey.data.should.be.a.String()
       walletUpdated.encrypted.privateKey.nonce.should.be.a.String()
-      should(wallet.encrypted.mnemonic).be.equal(null)
 
       // cleanup
       Object.assign(STORE, { wallets: [] })
@@ -107,9 +109,10 @@ describe('extend wallet permissions', function extendPermissionsTest() {
       wallet.isReadOnly.should.be.equal(true)
       wallet.type.should.be.equal('mnemonic')
       wallet.customType.should.be.equal('bip32Xpub')
+
       wallet.encrypted.should.be.an.Object()
-      should(wallet.encrypted.mnemonic).be.equal(null)
-      should(wallet.encrypted.privateKey).be.equal(null)
+      should(wallet.encrypted.mnemonic).be.null()
+      should(wallet.encrypted.privateKey).be.null()
 
       Object.assign(STORE, { wallets })
 
@@ -133,11 +136,12 @@ describe('extend wallet permissions', function extendPermissionsTest() {
       walletUpdated.isReadOnly.should.be.equal(false)
       walletUpdated.type.should.be.equal('mnemonic')
       walletUpdated.customType.should.be.equal('mnemonic')
+
       walletUpdated.encrypted.should.be.an.Object()
+      should(wallet.encrypted.privateKey).be.null()
       walletUpdated.encrypted.mnemonic.should.be.an.Object()
       walletUpdated.encrypted.mnemonic.data.should.be.a.String()
       walletUpdated.encrypted.mnemonic.nonce.should.be.a.String()
-      should(wallet.encrypted.privateKey).be.equal(null)
 
       done()
     })

@@ -12,6 +12,7 @@ const walletIdWrong = '123'
 const derivationPath = 'm/44\'/60\'/0\'/0'
 const derivationPathCustomA = 'm/44\'/60\'/1\'/0'
 const derivationPathCustomB = 'm/44\'/60\'/2\'/0'
+const passphrase = 'testmnemonicpassphrase'
 const mnemonicWordsCount = 12
 const addressesCountToDerive = 5
 const walletIdLength = 36
@@ -26,8 +27,9 @@ const walletNameUpdated = 'updated address wallet'
 const mnemonicXPubPair = {
   mnemonic: 'sunny boil orient spawn edit voyage impose eager notice parent boat pudding',
   bip32XPublicKey: 'xpub6ENQhtq6UZ7CVznP3uC8mkb9FAfuMepKMdeaBiBoRZwUjZkoYgoXztnggqTfd7DkC8tTZsN5RSPh7Wme42PF8sSRSSCqqdg381zbu2QMEHc',
-  bip32XPublicKeyCustomPath: 'xpub6EHUjFfkAkfqXkqkcZKNxa4Gx6ybxSfRFFeUYsBsqm2Eg2xrz7KWtAmW1pdJ6DNA852xkLtCPTbCinawRFm29WD4XLF8npKNQNpYa42cCwy',
-  bip32XPublicKeyCustomPath2: 'xpub6EzL2PV6NukMTntAULEUcdyNTzPvJDPFnog6p5fQek1ANmCm7sP1wJAFhFwBbxGESbzacQbivU97vGpuqzGrc3rVKSV8htoegG5TsrtNGUM',
+  bip32XPublicKeyCustomPathA: 'xpub6EHUjFfkAkfqXkqkcZKNxa4Gx6ybxSfRFFeUYsBsqm2Eg2xrz7KWtAmW1pdJ6DNA852xkLtCPTbCinawRFm29WD4XLF8npKNQNpYa42cCwy',
+  bip32XPublicKeyCustomPathB: 'xpub6EzL2PV6NukMTntAULEUcdyNTzPvJDPFnog6p5fQek1ANmCm7sP1wJAFhFwBbxGESbzacQbivU97vGpuqzGrc3rVKSV8htoegG5TsrtNGUM',
+  bip32XPublicKeyPassphrase: 'xpub6EydSBqvYKr4nyKxnZi2mWgyGDj9wLRXSzhCqJXgFycBRWdHamjPCwLVqEaXvpZ7bVfUegBqfMY3pKh5vUJ4hpyLvMYBP2DsmFDqk4oKrMw',
 }
 /* eslint-enable max-len */
 
@@ -53,21 +55,25 @@ describe('mnemonic wallet', function createMnemonicWalletTest() {
 
     wallet.should.be.an.Object()
     wallet.id.should.be.a.String()
+    should(wallet.address).be.null()
     wallet.name.should.be.equal(name)
-    should(wallet.address).be.equal(null)
     wallet.addressIndex.should.be.equal(0)
-    wallet.encrypted.should.be.an.Object()
     wallet.type.should.be.equal('mnemonic')
     wallet.isReadOnly.should.be.equal(false)
-    wallet.scryptParams.should.be.an.Object()
-    wallet.derivationPath.should.be.a.String()
-    should(wallet.encrypted.privateKey).be.null()
     wallet.customType.should.be.equal('mnemonic')
-    wallet.encrypted.mnemonic.should.be.an.Object()
     wallet.id.length.should.be.equal(walletIdLength)
+    wallet.bip32XPublicKey.should.be.equal(mnemonicXPubPair.bip32XPublicKey)
+
+    wallet.encrypted.should.be.an.Object()
+    should(wallet.encrypted.privateKey).be.null()
+    wallet.encrypted.mnemonic.should.be.an.Object()
     wallet.encrypted.mnemonic.data.should.be.a.String()
     wallet.encrypted.mnemonic.data.length.should.be.greaterThan(0)
-    wallet.bip32XPublicKey.should.be.equal(mnemonicXPubPair.bip32XPublicKey)
+
+    wallet.mnemonicOptions.should.be.an.Object()
+    wallet.passwordOptions.should.be.an.Object()
+    wallet.passwordOptions.scryptParams.should.be.an.Object()
+    wallet.mnemonicOptions.derivationPath.should.be.a.String()
 
     Object.assign(STORE, { wallets })
 
@@ -282,7 +288,7 @@ describe('mnemonic wallet', function createMnemonicWalletTest() {
        * so exception will thrown
        */
       const wallets = keystore.createWallet(STORE.wallets, {
-        data: mnemonicXPubPair.bip32XPublicKeyCustomPath,
+        data: mnemonicXPubPair.bip32XPublicKeyCustomPathA,
       }, password)
 
       Object.assign(STORE, { wallets })
@@ -309,7 +315,26 @@ describe('mnemonic wallet', function createMnemonicWalletTest() {
 
     walletWithChangedPath.should.be.an.Object()
     walletWithChangedPath.id.should.be.equal(id)
-    walletWithChangedPath.derivationPath.should.be.equal(derivationPathCustomB)
+    walletWithChangedPath.mnemonicOptions.should.be.an.Object()
+    walletWithChangedPath.mnemonicOptions.derivationPath.should.be.equal(derivationPathCustomB)
+
+    Object.assign(STORE, { wallets })
+
+    done()
+  })
+
+  it('setMnemonicPassphrase() should set new mnemonic passphrase', (done) => {
+    // wallet with mnemonic
+    const wallet = STORE.wallets[1]
+    const { id } = wallet
+    const wallets = keystore.setMnemonicPassphrase(STORE.wallets, id, password, passphrase)
+    const walletWithPassphrase = keystore.getWallet(wallets, id)
+
+    walletWithPassphrase.should.be.an.Object()
+    walletWithPassphrase.id.should.be.equal(id)
+    walletWithPassphrase.mnemonicOptions.should.be.an.Object()
+    walletWithPassphrase.mnemonicOptions.passphrase.should.be.equal(passphrase)
+    walletWithPassphrase.bip32XPublicKey.should.be.equal(mnemonicXPubPair.bip32XPublicKeyPassphrase)
 
     Object.assign(STORE, { wallets })
 
@@ -372,7 +397,7 @@ describe('mnemonic wallet', function createMnemonicWalletTest() {
     walletData.type.should.be.equal('mnemonic')
     walletData.privateKey.should.be.equal('n/a')
     walletData.mnemonic.should.be.equal(mnemonicXPubPair.mnemonic)
-    walletData.bip32XPublicKey.should.be.equal(mnemonicXPubPair.bip32XPublicKeyCustomPath2)
+    walletData.bip32XPublicKey.should.be.equal(mnemonicXPubPair.bip32XPublicKeyPassphrase)
 
     done()
   })

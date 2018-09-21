@@ -37,29 +37,33 @@ import keystore from 'jwallet-web-keystore'
 
 ### Wallet properties
 
-| Property             | Type    | Description                                                   |
-| -------------------- | ------- | ------------------------------------------------------------- |
-| id                   | String  | Unique ID of wallet                                           |
-| type                 | String  | Type of wallet  (`mnemonic` / `address`)                      |
-| name                 | String  | Wallet name                                                   |
-| salt                 | String  | Salt for enforcing of password                                |
-| address              | String  | Address of wallet                                             |
-| customType           | String  | User-friendly type of wallet                                  |
-| derivationPath       | String  | Path for derivation of keys from BIP32 Extended Key           |
-| encryptionType       | String  | Type of encryption                                            |
-| derivationPath       | String  | Derivation path for generating of addresses from mnemonic     |
-| bip32XPublicKey      | String  | BIP32 Extended Public Key                                     |
-| addressIndex         | Number  | Current index of address of `mnemonic` wallet                 |
-| saltBytesCount       | Number  | Number of bytes for `salt` parameter                          |
-| derivedKeyLength     | Number  | Size of derived from password key                             |
-| isReadOnly           | Boolean | Read-only flag of wallet                                      |
-| scryptParams         | Object  | Scrypt function params, that used for password key derivation |
-| scryptParams.N       | Number  | CPU/memory cost parameter                                     |
-| scryptParams.r       | Number  | The blocksize parameter                                       |
-| scryptParams.p       | Number  | Parallelization parameter                                     |
-| encrypted            | Object  | Container of encrypted data                                   |
-| encrypted.mnemonic   | Object  | Encrypted mnemonic                                            |
-| encrypted.privateKey | Object  | Encrypted private key                                         |
+| Property                             | Type    | Description                                                   |
+| ------------------------------------ | ------- | ------------------------------------------------------------- |
+| id                                   | String  | Unique ID of wallet                                           |
+| type                                 | String  | Type of wallet  (`mnemonic` / `address`)                      |
+| name                                 | String  | Wallet name                                                   |
+| address                              | String  | Address of wallet                                             |
+| customType                           | String  | User-friendly type of wallet                                  |
+| isReadOnly                           | Boolean | Read-only flag of wallet                                      |
+| bip32XPublicKey                      | String  | BIP32 Extended Public Key                                     |
+| addressIndex                         | Number  | Current index of address of `mnemonic` wallet                 |
+| passwordOptions                      | Object  | Container with options for password management                |
+| passwordOptions.salt                 | String  | Salt for enforcing of password                                |
+| passwordOptions.encryptionType       | String  | Type of encryption                                            |
+| passwordOptions.saltBytesCount       | Number  | Number of bytes for `salt` parameter                          |
+| passwordOptions.derivedKeyLength     | Number  | Size of derived from password key                             |
+| passwordOptions.scryptParams         | Object  | Scrypt function params, that used for password key derivation |
+| passwordOptions.scryptParams.N       | Number  | CPU/memory cost parameter                                     |
+| passwordOptions.scryptParams.r       | Number  | The blocksize parameter                                       |
+| passwordOptions.scryptParams.p       | Number  | Parallelization parameter                                     |
+| mnemonicOptions                      | Object  | Container with options for mnemonic management                |
+| mnemonicOptions.network              | String  | Network (e.g. 'livenet' or 'testnet')                         |
+| mnemonicOptions.passphrase           | String  | BIP39 passphrase                                              |
+| mnemonicOptions.derivationPath       | String  | Path for derivation of keys from BIP32 Extended Key           |
+| mnemonicOptions.paddedMnemonicLength | Number  | Fixed mnemonic length after leftpad with spaces               |
+| encrypted                            | Object  | Container of encrypted data                                   |
+| encrypted.mnemonic                   | Object  | Encrypted mnemonic                                            |
+| encrypted.privateKey                 | Object  | Encrypted private key                                         |
 
 **Notes:**
   * `isReadOnly` - flag means that wallet can be used only for balance / transactions checking
@@ -109,6 +113,8 @@ const wallet = keystore.getWallet(wallets, 'JHJ23jG^*DGHj667s')
 | props.scryptParams (optional)         | Object | `scrypt` function params ([see wallet properties](#wallet-properties))          |
 | props.data                            | String | main `wallet` data: address/privateKey/mnemonic/bip32XPublicKey                 |
 | props.name (optional)                 | String | name of new `wallet`                                                            |
+| props.network (optional)              | String | network                                                                         |
+| props.passphrase (optional)           | String | BIP39 passphrase                                                                |
 | props.derivationPath (optional)       | String | `derivation` path                                                               |
 | props.encryptionType (optional)       | String | `encryption` type                                                               |
 | props.saltBytesCount (optional)       | Number | size of `salt` for `password`                                                   |
@@ -261,7 +267,7 @@ const walletsNew = keystore.setAddressIndex(wallets, walletId, addressIndex)
 
 #### setDerivationPath(wallets, walletId, password, derivationPath)
 
-**Note: used only for `mnemonic` wallets.**
+**Note: used only for `full-access mnemonic` wallets.**
 
 ##### Parameters
 
@@ -281,6 +287,30 @@ List of wallets with new updated one, otherwise exception will be thrown.
 ```javascript
 const derivationPath = 'm/44\'/61\'/0\'/0'
 const walletsNew = keystore.setDerivationPath(wallets, walletId, password, derivationPath)
+```
+
+#### setMnemonicPassphrase(wallets, walletId, password, passphrase)
+
+**Note: used only for `full-access mnemonic` wallets.**
+
+##### Parameters
+
+| Param      | Type   | Description             |
+| ---------- | ------ | ----------------------- |
+| wallets    | Array  | List of existed wallets |
+| walletId   | String | Unique ID of wallet     |
+| password   | String | Wallet password         |
+| passphrase | String | BIP39 passphrase        |
+
+##### Returns
+
+List of wallets with new updated one, otherwise exception will be thrown.
+
+##### Example
+
+```javascript
+const passphrase = 'somepassphrase'
+const walletsNew = keystore.setMnemonicPassphrase(wallets, walletId, password, passphrase)
 ```
 
 #### setPassword(wallets, walletId, password, newPassword)
@@ -469,10 +499,10 @@ const result = keystore.testPassword('JHJ23jG^*DGHj667s')
 
 #### generateMnemonic(entropy, randomBufferLength)
 
-| Param                         | Type   | Description                                         |
-| ----------------------------- | ------ | --------------------------------------------------- |
+| Param                         | Type   | Description                                                                                                |
+| ----------------------------- | ------ | ---------------------------------------------------------------------------------------------------------- |
 | entropy (optional)            | String | Entropy for mnemonic initialisation (see [new Mnemonic](https://bitcore.io/api/mnemonic#new_Mnemonic_new)) |
-| randomBufferLength (optional) | Number | Buffer length (if `entropy` param is used) |
+| randomBufferLength (optional) | Number | Buffer length (if `entropy` param is used)                                                                 |
 
 ##### Returns
 
