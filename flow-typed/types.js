@@ -1,7 +1,7 @@
 declare type Address = string
 declare type Addresses = Array<Address>
 
-declare type Network = string | number | void
+declare type Network = string | number
 
 declare type WalletType = 'address' | 'mnemonic'
 declare type WalletCustomType = WalletType | 'bip32Xpub' | 'privateKey'
@@ -25,9 +25,8 @@ declare type ScryptParams = {|
 declare type PasswordOptions = {|
   scryptParams: ScryptParams,
   salt: string,
+  passwordHint: ?string,
   encryptionType: string,
-  saltBytesCount: number,
-  derivedKeyLength: number,
 |}
 
 declare type MnemonicOptions = {|
@@ -35,6 +34,19 @@ declare type MnemonicOptions = {|
   passphrase: string,
   derivationPath: string,
   paddedMnemonicLength: number,
+|}
+
+declare type PasswordOptionsUser = {|
+  scryptParams?: ScryptParams,
+  passwordHint?: string,
+  encryptionType?: string,
+|}
+
+declare type MnemonicOptionsUser = {|
+  network?: Network,
+  passphrase?: string,
+  derivationPath?: string,
+  paddedMnemonicLength?: number,
 |}
 
 declare type Wallet = {|
@@ -96,9 +108,10 @@ declare type WalletDecryptedData = {|
 
 declare type Wallets = Array<Wallet>
 
-declare type Backup = {|
-  +version: string,
-  +wallets?: ?Wallets,
+declare type Keystore = {|
+  +wallets: Wallets,
+  +testPasswordData: EncryptedData,
+  +passwordOptions: PasswordOptions,
 |}
 
 declare type PasswordResult = {|
