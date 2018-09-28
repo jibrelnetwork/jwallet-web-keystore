@@ -49,8 +49,12 @@ export {
   checkBip32XPublicKeyValid,
 }
 
+export function generateSalt(byteCount: number): string {
+  return utils.generateSalt(byteCount)
+}
+
 export function getPasswordOptions(options: ?PasswordOptionsUser): PasswordOptions {
-  const salt: string = utils.generateSalt(DEFAULT_SALT_BYTES_COUNT)
+  const salt: string = generateSalt(DEFAULT_SALT_BYTES_COUNT)
 
   return !options
     ? {
