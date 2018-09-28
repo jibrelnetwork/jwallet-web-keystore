@@ -53,6 +53,10 @@ export function generateSalt(byteCount: number): string {
   return utils.generateSalt(byteCount)
 }
 
+export function leftPadString(stringToPad: string, padChar: string, totalLength: number) {
+  return utils.leftPadString(stringToPad, padChar, totalLength)
+}
+
 export function getPasswordOptions(options: ?PasswordOptionsUser): PasswordOptions {
   const salt: string = generateSalt(DEFAULT_SALT_BYTES_COUNT)
 
@@ -185,7 +189,7 @@ export function encryptMnemonic(
   password: string,
   passwordOptionsUser?: ?PasswordOptionsUser,
 ): EncryptedData {
-  const mnemonicPad: string = utils.leftPadString(mnemonic, ' ', PADDED_MNEMONIC_LENGTH)
+  const mnemonicPad: string = leftPadString(mnemonic, ' ', PADDED_MNEMONIC_LENGTH)
   const passwordOptions: PasswordOptions = getPasswordOptions(passwordOptionsUser)
 
   const {
