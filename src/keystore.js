@@ -63,13 +63,11 @@ export function getPasswordOptions(options: ?PasswordOptionsUser): PasswordOptio
   return !options
     ? {
       salt,
-      passwordHint: null,
       scryptParams: DEFAULT_SCRYPT_PARAMS,
       encryptionType: DEFAULT_ENCRYPTION_TYPE,
     }
     : {
       salt,
-      passwordHint: options.passwordHint,
       scryptParams: options.scryptParams || DEFAULT_SCRYPT_PARAMS,
       encryptionType: options.encryptionType || DEFAULT_ENCRYPTION_TYPE,
     }

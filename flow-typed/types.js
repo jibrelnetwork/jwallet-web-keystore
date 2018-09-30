@@ -17,7 +17,6 @@ declare type ScryptParams = {|
 declare type PasswordOptions = {|
   scryptParams: ScryptParams,
   salt: string,
-  passwordHint: ?string,
   encryptionType: string,
 |}
 
@@ -30,7 +29,6 @@ declare type MnemonicOptions = {|
 
 declare type PasswordOptionsUser = {|
   scryptParams?: ScryptParams,
-  passwordHint?: string,
   encryptionType?: string,
 |}
 
