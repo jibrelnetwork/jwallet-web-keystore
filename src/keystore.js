@@ -60,17 +60,15 @@ export function leftPadString(stringToPad: string, padChar: string, totalLength:
 export function getPasswordOptions(options: ?PasswordOptionsUser): PasswordOptions {
   const salt: string = generateSalt(DEFAULT_SALT_BYTES_COUNT)
 
-  return !options
-    ? {
-      salt,
-      scryptParams: DEFAULT_SCRYPT_PARAMS,
-      encryptionType: DEFAULT_ENCRYPTION_TYPE,
-    }
-    : {
-      salt,
-      scryptParams: options.scryptParams || DEFAULT_SCRYPT_PARAMS,
-      encryptionType: options.encryptionType || DEFAULT_ENCRYPTION_TYPE,
-    }
+  return !options ? {
+    salt,
+    scryptParams: DEFAULT_SCRYPT_PARAMS,
+    encryptionType: DEFAULT_ENCRYPTION_TYPE,
+  } : {
+    salt: options.salt || salt,
+    scryptParams: options.scryptParams || DEFAULT_SCRYPT_PARAMS,
+    encryptionType: options.encryptionType || DEFAULT_ENCRYPTION_TYPE,
+  }
 }
 
 export function getMnemonicOptions(options: ?MnemonicOptionsUser): MnemonicOptions {
