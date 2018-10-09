@@ -15,29 +15,35 @@ declare type ScryptParams = {|
 |}
 
 declare type PasswordOptions = {|
-  scryptParams: ScryptParams,
-  salt: string,
-  encryptionType: string,
+  +scryptParams: ScryptParams,
+  +salt: string,
+  +passwordHint: string,
+  +encryptionType: string,
+  +saltBytesCount: number,
+  +derivedKeyLength: number,
 |}
 
 declare type MnemonicOptions = {|
-  network: Network,
-  passphrase: string,
-  derivationPath: string,
-  paddedMnemonicLength: number,
+  +network: Network,
+  +passphrase: string,
+  +derivationPath: string,
+  +paddedMnemonicLength: number,
 |}
 
 declare type PasswordOptionsUser = {|
-  scryptParams?: ScryptParams,
-  salt?: string,
-  encryptionType?: string,
+  +scryptParams?: ScryptParams,
+  +salt?: string,
+  +passwordHint?: string,
+  +encryptionType?: string,
+  +saltBytesCount?: number,
+  +derivedKeyLength?: number,
 |}
 
 declare type MnemonicOptionsUser = {|
-  network?: Network,
-  passphrase?: string,
-  derivationPath?: string,
-  paddedMnemonicLength?: number,
+  +network?: Network,
+  +passphrase?: string,
+  +derivationPath?: string,
+  +paddedMnemonicLength?: number,
 |}
 
 declare type PasswordResult = {|

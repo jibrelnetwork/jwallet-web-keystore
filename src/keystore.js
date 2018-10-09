@@ -66,12 +66,18 @@ export function getPasswordOptions(options: ?PasswordOptionsUser): PasswordOptio
 
   return !options ? {
     salt,
+    passwordHint: '',
     scryptParams: DEFAULT_SCRYPT_PARAMS,
     encryptionType: DEFAULT_ENCRYPTION_TYPE,
+    saltBytesCount: DEFAULT_SALT_BYTES_COUNT,
+    derivedKeyLength: DEFAULT_DERIVATION_KEY_LENGTH,
   } : {
     salt: options.salt || salt,
+    passwordHint: options.passwordHint || '',
     scryptParams: options.scryptParams || DEFAULT_SCRYPT_PARAMS,
     encryptionType: options.encryptionType || DEFAULT_ENCRYPTION_TYPE,
+    saltBytesCount: options.saltBytesCount || DEFAULT_SALT_BYTES_COUNT,
+    derivedKeyLength: options.derivedKeyLength || DEFAULT_DERIVATION_KEY_LENGTH,
   }
 }
 
