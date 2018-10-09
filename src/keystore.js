@@ -53,6 +53,10 @@ export function generateSalt(byteCount: number): string {
   return utils.generateSalt(byteCount)
 }
 
+export function getChecksum(address: string): string {
+  return utils.getChecksum(address)
+}
+
 export function leftPadString(stringToPad: string, padChar: string, totalLength: number) {
   return utils.leftPadString(stringToPad, padChar, totalLength)
 }
