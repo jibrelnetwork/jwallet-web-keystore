@@ -1,19 +1,11 @@
 declare type Address = string
 declare type Addresses = Array<Address>
 
-declare type Network = string | number | void
-
-declare type WalletType = 'address' | 'mnemonic'
-declare type WalletCustomType = WalletType | 'bip32Xpub' | 'privateKey'
+declare type Network = string | number
 
 type EncryptedData = {|
   +data: string,
   +nonce: string,
-|}
-
-declare type WalletEncryptedData = {|
-  +mnemonic: ?EncryptedData,
-  +privateKey: ?EncryptedData,
 |}
 
 declare type ScryptParams = {|
@@ -23,82 +15,35 @@ declare type ScryptParams = {|
 |}
 
 declare type PasswordOptions = {|
-  scryptParams: ScryptParams,
-  salt: string,
-  encryptionType: string,
-  saltBytesCount: number,
-  derivedKeyLength: number,
+  +scryptParams: ScryptParams,
+  +salt: string,
+  +passwordHint: string,
+  +encryptionType: string,
+  +saltBytesCount: number,
+  +derivedKeyLength: number,
 |}
 
 declare type MnemonicOptions = {|
-  network: Network,
-  passphrase: string,
-  derivationPath: string,
-  paddedMnemonicLength: number,
+  +network: Network,
+  +passphrase: string,
+  +derivationPath: string,
+  +paddedMnemonicLength: number,
 |}
 
-declare type Wallet = {|
-  +passwordOptions: ?PasswordOptions,
-  +mnemonicOptions: ?MnemonicOptions,
-  +encrypted: WalletEncryptedData,
-  +id: string,
-  +name: string,
-  +type: WalletType,
-  +address: ?string,
-  +bip32XPublicKey: ?string,
-  +customType: WalletCustomType,
-  +addressIndex: ?number,
-  +isReadOnly: boolean,
-|}
-
-declare type WalletUpdatedData = {|
-  +passwordOptions?: PasswordOptions,
-  +mnemonicOptions?: MnemonicOptions,
-  +encrypted?: WalletEncryptedData,
-  +name?: string,
-  +bip32XPublicKey?: ?string,
-  +customType?: ?WalletCustomType,
-  +addressIndex?: ?number,
-  +isReadOnly?: ?boolean,
-|}
-
-declare type WalletNewData = {|
+declare type PasswordOptionsUser = {|
   +scryptParams?: ScryptParams,
-  +data: string,
-  +name?: string,
-  +network?: Network,
-  +passphrase?: string,
-  +derivationPath?: string,
+  +salt?: string,
+  +passwordHint?: string,
   +encryptionType?: string,
   +saltBytesCount?: number,
   +derivedKeyLength?: number,
+|}
+
+declare type MnemonicOptionsUser = {|
+  +network?: Network,
+  +passphrase?: string,
+  +derivationPath?: string,
   +paddedMnemonicLength?: number,
-|}
-
-declare type WalletData = {|
-  +passwordOptions: PasswordOptions,
-  +mnemonicOptions: MnemonicOptions,
-  +id: string,
-  +data: string,
-  +name: string,
-|}
-
-declare type WalletDecryptedData = {|
-  +id: string,
-  +name: string,
-  +address: string,
-  +mnemonic: string,
-  +privateKey: string,
-  +type: WalletCustomType,
-  +readOnly: 'yes' | 'no',
-  +bip32XPublicKey: string,
-|}
-
-declare type Wallets = Array<Wallet>
-
-declare type Backup = {|
-  +version: string,
-  +wallets?: ?Wallets,
 |}
 
 declare type PasswordResult = {|

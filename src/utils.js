@@ -43,7 +43,7 @@ export function add0x(data: string): string {
   return `0x${data}`
 }
 
-function getChecksum(address: string): string {
+export function getChecksum(address: string): string {
   const addressLowerCase: string = strip0x(address).toLowerCase()
   const hash: string = cryptoJS.SHA3(addressLowerCase, { outputLength: 256 }).toString(ENCODER)
 
