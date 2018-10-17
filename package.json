@@ -1,6 +1,6 @@
 {
-  "name": "jwallet-web-keystore",
-  "version": "0.7.4",
+  "name": "@jibrelnetwork/jwallet-web-keystore",
+  "version": "1.0.0",
   "description": "Library for ethereum blockchain accounts management",
   "main": "./lib/index.js",
   "scripts": {
@@ -11,8 +11,7 @@
     "compile": "npm run clean && ./node_modules/.bin/babel ./src --out-dir ./lib",
     "build": "npm run compile && npm test",
     "precommit": "npm run flow && ./node_modules/.bin/lint-staged",
-    "prepush": "npm run compile",
-    "postcheckout": "npm i"
+    "prepush": "npm run compile"
   },
   "repository": {
     "type": "git",
